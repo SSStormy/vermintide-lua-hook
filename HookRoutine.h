@@ -1,6 +1,7 @@
 #pragma once
 #include "globals.h"
 #include "vlua.h"
+#include "LuaMod.h"
 
 namespace VermHook
 {
@@ -21,12 +22,15 @@ namespace VermHook
 	class ModLoaderRoutine : public HookRoutine
 	{
 	public:
-		const char* RelativeModFolderDirectory;
+		LPCSTR RelativeModFolderDirectory;
+		std::vector<LuaMod*>* Mods = new std::vector<LuaMod*>();
 
 		ModLoaderRoutine(const char* relativeModFldr);
 		~ModLoaderRoutine();
 
 		void PostInit();
 		void ReloadMods();
+	private:
+		void LoadMod(LPCSTR rFdir);
 	};
 }

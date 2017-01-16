@@ -17,7 +17,7 @@ namespace VermHook
 		{
 			int result = luaL_loadbuffer(state, buf, sz, name);
 
-			LPCSTR oldPwd = BackupCurrentDirectory();
+			SAVE_PWD;
 
 			std::stringstream ss;
 			ss.str(name);
@@ -40,9 +40,7 @@ namespace VermHook
 				SetCurrentDirectory(npath);
 			}
 
-			SetCurrentDirectory(oldPwd);
-			delete oldPwd;
-
+			RESTORE_PWD;
 			return result;
 		}
 	}

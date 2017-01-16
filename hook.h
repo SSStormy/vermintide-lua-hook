@@ -13,6 +13,7 @@ namespace VermHook
 	extern int(*lua_type)(lua_state*, int);
 	extern const char(*lua_tolstring) (lua_state*, int, size_t*);
 	extern void(*lua_call)(lua_state*, int/*nargs*/, int /*nresults*/);
+
 	extern void(*lua_getfield)(lua_state*, int /*index*/, const char */*k*/);
 	extern void(*lua_pushstring)(lua_state*, const char */*s*/);
 	extern int(*lua_pcall)(lua_state*, int /*nargs*/, int /*nresults*/, int /*errfunc*/);

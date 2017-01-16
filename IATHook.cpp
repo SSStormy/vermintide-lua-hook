@@ -47,7 +47,7 @@ namespace VermHook
 	IATHook::~IATHook()
 	{
 		Unhook();
-		delete Name;
+		delete[] Name;
 		delete IATAddress;
 	}
 
