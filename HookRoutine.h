@@ -1,7 +1,10 @@
 #pragma once
+
 #include "globals.h"
 #include "vlua.h"
 #include "LuaMod.h"
+#include <vector>
+#include "IATHook.h"
 
 namespace VermHook
 {
@@ -17,20 +20,27 @@ namespace VermHook
 	public:
 		void PostInit();
 		DumpLuaRoutine::~DumpLuaRoutine();
+	private:
+		unique_ptr<IATHook> LoadBufferHook;
 	};
 
 	class ModLoaderRoutine : public HookRoutine
 	{
 	public:
-		LPCSTR RelativeModFolderDirectory;
-		std::vector<LuaMod*>* Mods = new std::vector<LuaMod*>();
+		const static string BaseModFolderName;
+		const static string ModConfigFilename;
 
-		ModLoaderRoutine(const char* relativeModFldr);
+		const string RelativeModFolderDirectory;
+
+
+		ModLoaderRoutine(const string& relativeModFldr);
 		~ModLoaderRoutine();
 
 		void PostInit();
 		void ReloadMods();
 	private:
+		std::vector<unique_ptr<IATHook>> _iatHooks;
+		std::vector<unique_ptr<LuaMod>> _mods;
 		void LoadMod(LPCSTR rFdir);
 	};
 }

@@ -17,12 +17,12 @@ namespace VermHook
 
 #define LUA_GLOBALSINDEX	(-10002)
 
-	class lua_state;
-	typedef int(*lua_cfunction) (lua_state*);
+	class LuaState;
+	typedef int(*LuaCFunction) (LuaState*);
 
-	class luaL_reg
+	class LuaReg
 	{
 		const char* name;
-		lua_cfunction function;
+		LuaCFunction function;
 	};
 }

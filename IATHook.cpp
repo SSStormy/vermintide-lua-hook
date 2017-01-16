@@ -1,71 +1,63 @@
-#include "windows.h"
 #include "IATHook.h"
 #include "globals.h"
 
 namespace VermHook
 {
-	PDWORD GetIATAddress(LPCSTR tModule, LPCSTR tFunc)
+	PDWORD IATHook::GetIATAddress(const string& tModule, const string& tFunc)
 	{
+		const char* tModuleC = tModule.c_str();
+		const char* tFuncC = tFunc.c_str();
+
 		HINSTANCE  hHandle = GetModuleHandle(NULL);
 		IMAGE_NT_HEADERS* coffHeader = (IMAGE_NT_HEADERS*)((DWORD)hHandle + (DWORD)((IMAGE_DOS_HEADER*)hHandle)->e_lfanew);
 		IMAGE_DATA_DIRECTORY importTableHeader = coffHeader->OptionalHeader.DataDirectory[1];
 		IMAGE_IMPORT_DESCRIPTOR* importTable = (IMAGE_IMPORT_DESCRIPTOR*)(importTableHeader.VirtualAddress + (DWORD)hHandle);
 
 		IMAGE_IMPORT_DESCRIPTOR* moduleImports = importTable--;
-		char* mName = NULL;
+		char* mName = nullptr;
 
 		do
 		{
 			mName = (char*)((DWORD)hHandle + (++moduleImports)->Name);
-		} while (strcmp(tModule, mName) != 0);
+		} while (strcmp(tModuleC, mName) != 0);
 
 
 		PDWORD oft = (PDWORD)((DWORD)moduleImports->OriginalFirstThunk + (DWORD)hHandle);
 		PDWORD ft = (PDWORD)((DWORD)moduleImports->FirstThunk + (DWORD)hHandle);
 
 		int i = 0;
+		PDWORD retval = NULL;
 
 		while (*(oft + i) != 0x00000000)
 		{
 			char* name = (char *)(*(oft + i) + (DWORD)hHandle + 2);
-			if (strcmp(name, tFunc) == 0)
-				return ft + i;
-
+			if (strcmp(name, tFuncC) == 0)
+			{
+				retval = ft + i;
+				break;
+			}
 			i++;
 		}
-		return NULL;
+		return retval;
 	}
 
-	IATHook::IATHook(PDWORD iatAddr, DWORD origAddr, DWORD overrideAddr, LPCSTR name)
+	IATHook::IATHook(const PDWORD iatAddr, const DWORD origAddr, const DWORD overrideAddr, const string& name)
+		: IATAddress(iatAddr), OriginalAddress(origAddr), OverrideAddress(overrideAddr), Name(name)
 	{
-		IATAddress = iatAddr;
-		OriginalAddress = origAddr;
-		OverrideAddress = overrideAddr;
-		Name = name;
 	}
 
 	IATHook::~IATHook()
 	{
 		Unhook();
-		delete[] Name;
-		delete IATAddress;
 	}
 
-	IATHook::IATHook(const IATHook* other)
-	{
-		IATAddress = other->IATAddress;
-		OriginalAddress = other->OriginalAddress;
-		OverrideAddress = other->OverrideAddress;
-		Name = other->Name;
-	}
-
-	IATHook* IATHook::Hook(LPCSTR fModule, LPCSTR fName, DWORD overrideAddr)
+	IATHook* IATHook::Hook(const string& fModule, const string& fName, DWORD overrideAddr)
 	{
 		PDWORD iat_addr = GetIATAddress(fModule, fName);
-		if (iat_addr == NULL)
+		if (iat_addr == nullptr)
 		{
-			LOG("Failed to hook " << fName << ": iat_addr is NULL");
-			return NULL;
+			LOG("Failed to hook " << fName << ": iat_addr is nullptr");
+			return nullptr;
 		}
 
 		DWORD orig_addr = *iat_addr;

@@ -1,42 +1,44 @@
 #pragma once
-
 #include "json.hpp"
-#include <vector>
+#include "globals.h"
+
 namespace VermHook
 {
-
-#define KEY_HOOK_PRE "HookPre"
-#define KEY_HOOK_POST "HookPost"
-#define KEY_VERM_SCRIPT	"VermScript"
-#define KEY_SCRIPT_EXEC "ModScriptExec"
-#define KEY_MOD_NAME "Name"
-
 	class LuaMod
 	{
+		static const string KeyHookPre;
+		static const string KeyHookPost;
+		static const string KeyVermScript;
+		static const string KeySriptExec;
+		static const string KeyModName;
+
 	public:
 		class LuaHook
 		{
 		public:
-			const char* VermScript;
-			const char* ScriptExec;
-			LuaHook(const char* vscript, const char* scriptExec);
-			~LuaHook();
+			const string VermScript;
+			const string ScriptExec;
+			LuaHook(const string& vscript, const string& scriptExec);
 		};
 
-		const char* ModDirectoryName;
-		const char* ModName;
+		const string ModDirectoryName;
+		const string ModName;
 
-		std::vector<LuaHook*>* PreHooks = new std::vector<LuaHook*>();
-		std::vector<LuaHook*>* PostHooks = new std::vector<LuaHook*>();
+		LuaMod(const string& modname, const string& configFd);
 
-		LuaMod(const char* modname, const char* configFd);
-		~LuaMod();
+		// TODO : replace these with std::maps for easy lookup when given name from loadbuffer
+		const std::vector<shared_ptr<LuaHook>> GetPreHooks() const;
+		const std::vector<shared_ptr<LuaHook>> GetPostHooks() const;
+		const string GetModName() const;
 
 	private:
 		using json = nlohmann::json;
-
 		json _config;
 
-		void LoadHooks(std::vector<LuaHook*>* hooks, const char* keyName);
+		string _modName;
+		std::vector<shared_ptr<LuaHook>> _preHooks;
+		std::vector<shared_ptr<LuaHook>> _postHooks;
+
+		inline void LoadHooks(std::vector<shared_ptr<LuaHook>>& hooks, const string& keyName);
 	};
 }

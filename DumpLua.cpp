@@ -1,19 +1,17 @@
 #include "HookRoutine.h"
-#include "globals.h"
-#include "vlua.h"
 #include "hook.h"
 #include "IATHook.h"
-#include <vector>
-
-#include <string>
 #include <sstream>
 #include <fstream>
+#include "Utils.h"
 
 namespace VermHook
 {
 	namespace
 	{
-		int hep_luaL_loadbuffer(lua_state* state, const char* buf, size_t sz, const char* name)
+		static const string LuaIdentifier = ".lua"s;
+
+		int hep_luaL_loadbuffer(LuaState* state, const char* buf, size_t sz, const char* name)
 		{
 			int result = luaL_loadbuffer(state, buf, sz, name);
 
@@ -24,20 +22,18 @@ namespace VermHook
 			std::string item;
 			while (std::getline(ss, item, '/'))
 			{
-				const char* npath = item.c_str();
-				size_t size = strlen(npath);
-				// eh it works so fuck off
-				if (npath[size - 4] == '.' && npath[size - 3] == 'l' &&npath[size - 2] == 'u' &&npath[size - 1] == 'a')
+				auto cstr = item.c_str();
+				if (Utils::StringEndWith(item, LuaIdentifier))
 				{
-					std::ofstream out(npath);
+					std::ofstream out(item);
 					out.write(buf, sz);
 					out.close();
 
 					continue;
 				}
 
-				CreateDirectory(npath, NULL);
-				SetCurrentDirectory(npath);
+				CreateDirectory(cstr, NULL);
+				SetCurrentDirectory(cstr);
 			}
 
 			RESTORE_PWD;
@@ -45,20 +41,14 @@ namespace VermHook
 		}
 	}
 
-	IATHook* hook_lbf = NULL;
-
 	DumpLuaRoutine::~DumpLuaRoutine()
 	{
-		if (hook_lbf != NULL) 
-		{
-			hook_lbf->Unhook();
-			delete hook_lbf;
-		}
+		LoadBufferHook->Unhook();
 	}
 
 	void DumpLuaRoutine::PostInit()
 	{
 		LOG("Routine: DumpLua");
-		hook_lbf = IATHook::Hook(LUA_MODULE, "luaL_loadbuffer", (DWORD)hep_luaL_loadbuffer);
+		LoadBufferHook.reset(IATHook::Hook(LuaModule, "luaL_loadbuffer", (DWORD)hep_luaL_loadbuffer));
 	}
 }

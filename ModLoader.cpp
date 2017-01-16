@@ -3,57 +3,52 @@
 #include "globals.h"
 #include "HookRoutine.h"
 #include "IATHook.h"
-#include <vector>
+#include "Utils.h"
 
 namespace VermHook
 {
-#define BASE_MOD_FOLDER_NAME "base"
+	const string ModLoaderRoutine::BaseModFolderName = "base";
+	const string ModLoaderRoutine::ModConfigFilename = "config.json";
 
 	namespace
 	{
-		int hep_luaL_loadbuffer(lua_state* state, const char* buffer, size_t sz, const char* name)
+		int hep_luaL_loadbuffer(LuaState* state, const char* buffer, size_t sz, const char* name)
 		{
 			return luaL_loadbuffer(state, buffer, sz, name);
 		}
 	}
 
-	std::vector<IATHook*> *_hooks = new std::vector<IATHook*>();
-
-	ModLoaderRoutine::ModLoaderRoutine(const char* relativeModFldr)
+	ModLoaderRoutine::ModLoaderRoutine(const string& relativeModFldr) : RelativeModFolderDirectory(relativeModFldr)
 	{
-		RelativeModFolderDirectory = relativeModFldr;
 	}
 
 	ModLoaderRoutine::~ModLoaderRoutine()
 	{
-		for (auto hook : *_hooks)
-		{
-			hook->Unhook();
-			delete hook;
-		}
-
-		delete Mods;
-		delete _hooks;
+		for (auto& iat : _iatHooks)
+			iat->Unhook;
 	}
 
 	void ModLoaderRoutine::PostInit()
 	{
 		LOG("Routine: ExportHook");
-		_hooks->push_back(IATHook::Hook(LUA_MODULE, "luaL_loadbuffer", (DWORD)hep_luaL_loadbuffer));
+
+		_iatHooks.push_back(
+			unique_ptr<IATHook>(
+				IATHook::Hook(LuaModule, "luaL_loadbuffer", (unsigned long)hep_luaL_loadbuffer)));
 
 		ReloadMods();
 	}
 
 	void ModLoaderRoutine::ReloadMods()
 	{
-		SAVE_PWD;
 		LOG("Reloading mods");
-		SetCurrentDirectory(RelativeModFolderDirectory);
+		SAVE_PWD_N(RelativeModFolderDirectory.c_str());
 
-		LoadMod(BASE_MOD_FOLDER_NAME);
+		const char* bmfnC = BaseModFolderName.c_str();
+		LoadMod(bmfnC);
 
 		WIN32_FIND_DATA fi;
-		HANDLE h = FindFirstFileEx("*", FindExInfoStandard, &fi, FindExSearchLimitToDirectories ,NULL, 0);
+		HANDLE h = FindFirstFileEx("*", FindExInfoStandard, &fi, FindExSearchLimitToDirectories ,nullptr, 0);
 
 		if (h != INVALID_HANDLE_VALUE)
 		{
@@ -61,7 +56,7 @@ namespace VermHook
 			{
 				if (fi.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY
 					&& !(*fi.cFileName == '.' || fi.cFileName[1] == '.')
-					&& strcmp(BASE_MOD_FOLDER_NAME, fi.cFileName) != 0)
+					&& strcmp(bmfnC, fi.cFileName) != 0)
 				{
 					LoadMod(fi.cFileName);
 				}
@@ -70,24 +65,19 @@ namespace VermHook
 
 			FindClose(h);
 		}
-
 		RESTORE_PWD;
 	}
 
-#define MOD_CONFIG_FNAME "config.json"
 
 	void ModLoaderRoutine::LoadMod(LPCSTR rFdir)
 	{
 		LOG("Loading mod folder at relative dir " << rFdir);
-		SAVE_PWD;
+		SAVE_PWD_N(rFdir);
 
-		SetCurrentDirectory(rFdir);
-		if (!Utils::FileExists(MOD_CONFIG_FNAME))
-		{
-			DLLFAIL_C(3, rFdir, ": is missing config: ", MOD_CONFIG_FNAME);
-		}
+		if (!Utils::FileExists(ModConfigFilename.c_str()))
+			Utils::DllFail(string(rFdir) + ": is missing config: " + ModConfigFilename);
 
-		Mods->push_back(new LuaMod(rFdir, MOD_CONFIG_FNAME));
+		_mods.push_back(std::make_unique<LuaMod>(rFdir, ModConfigFilename));
 
 		RESTORE_PWD;
 	}

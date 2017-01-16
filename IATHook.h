@@ -1,28 +1,26 @@
 #pragma once
-#include "windows.h"
+#include "globals.h"
+#include <Windows.h>
 
 namespace VermHook
 {
-	PDWORD GetIATAddress(LPCSTR tModule, LPCSTR tFunc);
-
 	class IATHook
 	{
 	public:
-		PDWORD IATAddress;
-		DWORD OriginalAddress;
-		DWORD OverrideAddress;
-		LPCSTR Name;
+		const PDWORD IATAddress;
+		const DWORD OriginalAddress;
+		const DWORD OverrideAddress;
+		const string Name;
 
-		static IATHook* Hook(LPCSTR fModule, LPCSTR fName, DWORD overrideAddr);
-		void Unhook();
-
+		static PDWORD GetIATAddress(const string& tModule, const string& tFunc);
+		static IATHook* Hook(const string& fModule, const string& fName, DWORD overrideAddr);
 		~IATHook();
-		IATHook(const IATHook* other);
 
+		void Unhook();
 	private:
-		BOOL _isHooked = false;
+		bool _isHooked = false;
 
-		IATHook::IATHook(PDWORD iatAddr, DWORD origAddr, DWORD overrideAddr, LPCSTR name);
-		static void WriteIATMemory(PDWORD iatPtr, DWORD newVal);
+		static void WriteIATMemory(const PDWORD iatPtr, const DWORD newVal);
+		IATHook::IATHook(const PDWORD iatAddr, const DWORD origAddr, const DWORD overrideAddr, const string& name);
 	};
 }

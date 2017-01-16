@@ -1,13 +1,13 @@
-#include <windows.h>
 #include "globals.h"
 #include "hook.h"
 #include "HookRoutine.h"
+#include "Utils.h"
 
 FARPROC fPtr;
 
-#define RELATIVE_BASE_MOD_FOLDER "mods_devel"
+const string RelativeBaseModFolder = "mods_devel";
 
-BOOL WINAPI DllMain(HINSTANCE hInst, DWORD reason, LPVOID)
+BOOL WINAPI DllMain(HINSTANCE, DWORD reason, LPVOID)
 {
 	if (reason == DLL_PROCESS_ATTACH)
 	{
@@ -20,27 +20,23 @@ BOOL WINAPI DllMain(HINSTANCE hInst, DWORD reason, LPVOID)
 			SetConsoleTitle("Debug Console");
 		}
 		else
-		{
-			DLLFAIL("Failed to create debug console.");
-		}
+			VermHook::Utils::DllFail("Failed to create debug console.");
 
 		LOG("DLL_PROCESS_ATTACH");
 
 		char bufd[200];
 		GetSystemDirectory(bufd, 200);
 		strcat_s(bufd, "\\DINPUT8.dll");
-			
+
 		HINSTANCE hL = LoadLibrary(bufd);
 
 		if (!hL)
 		{
-			char err[300] = "Could not load DINPUT8.dll in ";
-			strcat_s(err, bufd);
-			DLLFAIL(err);
+			VermHook::Utils::DllFail("Could not load DINPUT8.dll in " + string(bufd));
 		}
 
 		fPtr = GetProcAddress(hL, "DirectInput8Create");
-		VermHook::InitHook(new VermHook::ModLoaderRoutine(RELATIVE_BASE_MOD_FOLDER));
+		VermHook::InitHook(std::make_unique<VermHook::ModLoaderRoutine>(RelativeBaseModFolder));
 	}
 	else if (reason == DLL_PROCESS_DETACH)
 	{

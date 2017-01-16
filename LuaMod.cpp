@@ -1,74 +1,65 @@
 #include "LuaMod.h"
-#include "windows.h"
 #include "globals.h"
+#include <Windows.h>
 #include <fstream>
+#include "Utils.h"
 
 namespace VermHook
 {
-	void LuaMod::LoadHooks(std::vector<LuaHook*>* hooks, const char* keyName)
-	{
-#define HASSERT(test, n, ...) if(test) { DLLFAIL_C(n+1, ModDirectoryName, ##__VA_ARGS__); }
-#define HVERIFY(key) HASSERT(jhook[key].is_null() || !jhook[key].is_string(), 2, ": invalid hook: ", key);
+	const string LuaMod::KeyHookPre = "HookPre"s;
+	const string LuaMod::KeyHookPost = "HookPost"s;
+	const string LuaMod::KeyVermScript = "VermScript"s;
+	const string LuaMod::KeySriptExec = "ModScriptExec"s;
+	const string LuaMod::KeyModName = "Name"s;
 
+	inline void LuaMod::LoadHooks(std::vector<shared_ptr<LuaHook>>& hooks, const string& keyName)
+	{
 		json::value_type jobj = _config[keyName];
 
-		HASSERT(jobj.is_null(), 3, ": is null key: ", keyName);
-		HASSERT(!jobj.is_array(), 3, ": json object of key ", keyName, " is not an array.");
+		// TODO : fail on bad config
 
 		for (auto jhook : jobj)
 		{
-			HASSERT(jhook.is_null(), 1, ": null hook.");
-
-			HVERIFY(KEY_VERM_SCRIPT);
-			HVERIFY(KEY_SCRIPT_EXEC);
-
-			hooks->push_back(new LuaHook(
-				jhook[KEY_VERM_SCRIPT].get<std::string>().c_str(), 
-				jhook[KEY_SCRIPT_EXEC].get<std::string>().c_str()));
+			hooks.push_back(std::make_shared<LuaHook>(
+				jhook[KeyVermScript].get<string>(),
+				jhook[KeySriptExec].get<string>()));
 		}
-#undef HASSERT
-#undef HVERIFY
 	}
 
-	LuaMod::LuaMod(const char* modDir, const char* configFd)
+	LuaMod::LuaMod(const string& modDir, const string& configFd) 
+		: ModDirectoryName(modDir)
 	{
-		ModDirectoryName = modDir;
-
 		_config = json::parse(std::ifstream(configFd));
 
-		/* Verify schema */
-#define VERIFY(key) if(_config[key].is_null()) { \
-			DLLFAIL_C(3, modDir, ": invalid config key: ", key); }
+		_modName = _config[KeyModName].get<string>();
 
-		VERIFY(KEY_MOD_NAME);
-		ModName = _config[KEY_MOD_NAME].get<std::string>().c_str();
-#undef VERIFY
+		LoadHooks(_preHooks, KeyHookPre);
+		LoadHooks(_postHooks, KeyHookPost);
 
-		LoadHooks(PreHooks, KEY_HOOK_PRE);
-		LoadHooks(PostHooks, KEY_HOOK_POST);
-			
-		LOG("Loaded mod: " << ModName);;
-		for(auto h : *PreHooks) LOG("Pre: [" << h->VermScript << " -> " << h->ScriptExec);
-		for (auto h : *PostHooks) LOG("Post: [" << h->VermScript << " -> " << h->ScriptExec);
+		LOG("Loaded mod: " << ModName);
+		for (auto& h : _preHooks) LOG("Pre: [" << h->VermScript << " -> " << h->ScriptExec);
+		for (auto& h : _postHooks) LOG("Post: [" << h->VermScript << " -> " << h->ScriptExec);
 
 	}
-	LuaMod::~LuaMod()
+
+	LuaMod::LuaHook::LuaHook(const string& vscript, const string& scriptExec) : VermScript(vscript), ScriptExec(scriptExec)
 	{
-		delete &_config;
-		delete[] ModName;
-		delete[] ModDirectoryName;
-		delete PreHooks;
-		delete PostHooks;
+
 	}
 
-	LuaMod::LuaHook::LuaHook(const char* vscript, const char* scriptExec)
+	const std::vector<shared_ptr<LuaMod::LuaHook>> LuaMod::GetPreHooks() const
 	{
-		VermScript = vscript;
-		ScriptExec = scriptExec;
+		return _preHooks;
 	}
-	LuaMod::LuaHook::~LuaHook()
+
+	const std::vector<shared_ptr<LuaMod::LuaHook>> LuaMod::GetPostHooks() const
 	{
-		delete[] VermScript;
-		delete[] ScriptExec;
+		return _postHooks;
 	}
+
+	const string LuaMod::GetModName() const
+	{
+		return _modName;
+	}
+
 }
