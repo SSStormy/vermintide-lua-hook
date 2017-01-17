@@ -1,9 +1,9 @@
-#include "HookRoutine.h"
-#include "hook.h"
-#include "IATHook.h"
+#include "include/Routine/DumpLuaRoutine.h"
+#include "include/Hook.h"
+#include "include/IATHook.h"
 #include <sstream>
 #include <fstream>
-#include "Utils.h"
+#include "include/Utils.h"
 
 namespace VermHook
 {
@@ -39,11 +39,6 @@ namespace VermHook
 			RESTORE_PWD;
 			return result;
 		}
-	}
-
-	DumpLuaRoutine::~DumpLuaRoutine()
-	{
-		LoadBufferHook->Unhook();
 	}
 
 	void DumpLuaRoutine::PostInit()

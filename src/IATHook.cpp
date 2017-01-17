@@ -1,5 +1,5 @@
-#include "IATHook.h"
-#include "globals.h"
+#include "include/IATHook.h"
+#include "include/Globals.h"
 
 namespace VermHook
 {

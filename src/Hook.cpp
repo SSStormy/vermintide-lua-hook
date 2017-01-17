@@ -1,14 +1,8 @@
-#include "hook.h"
-#include "globals.h"
-#include "IATHook.h"
-#include "HookRoutine.h"
+#include "include/Hook.h"
+#include "include/Globals.h"
+#include "include/IATHook.h"
+#include "include/Routine/ModLoaderRoutine.h"
 
-/*
-int result = luaL_loadfile(state, "init.lua");
-LOG("result " << result);
-
-lua_pcall(state, 0, 1, 0);
-*/
 namespace VermHook
 {
 	void(*lua_pushcclosure) (LuaState*, LuaCFunction, int);
@@ -16,29 +10,24 @@ namespace VermHook
 	void(*luaL_openlibs) (LuaState*);
 	int(*luaL_loadfile) (LuaState*, const char*);
 	int(*lua_type)(LuaState*, int);
-	const char(*lua_tolstring) (LuaState*, int, size_t*);
+	const char* (*lua_tolstring) (LuaState*, int, size_t*);
 	void(*lua_call)(LuaState*, int/*nargs*/, int /*nresults*/);
 	void(*lua_getfield)(LuaState*, int /*index*/, const char */*k*/);
 	void(*lua_pushstring)(LuaState*, const char */*s*/);
 	int(*lua_pcall)(LuaState*, int /*nargs*/, int /*nresults*/, int /*errfunc*/);
 	void(*luaL_openlib) (LuaState*, const char* /*libname*/, const LuaReg*, int /*nup*/);
-	void(*LuaRegister) (LuaState*, const char* /*libname*/, const LuaReg*);
+	void(*luaL_register) (LuaState*, const char* /*libname*/, const LuaReg*);
 	void(*lua_remove) (LuaState*, int /*index*/);
 	int(*luaL_loadbuffer)(LuaState*, const char* /*buff*/, size_t, const char* /*name*/);
 	int(*luaL_loadstring)(LuaState*, const char*);
+	void (*lua_pushboolean)(LuaState*, bool);
 
-	unique_ptr<HookRoutine> Routine;
+	unique_ptr<ModLoaderRoutine> routine = nullptr;
 
-	inline void LuaMapFunction(LuaState* state, const char* name, LuaCFunction function)
-	{
-		lua_pushcclosure(state, function, 0);
-		lua_setfield(state, LUA_GLOBALSINDEX, name);
-	}
-
-	void InitHook(unique_ptr<HookRoutine> routine)
+	void InitHook()
 	{
 		LOG("Initialize hook.");
-		Routine = std::move(routine);
+		routine = std::make_unique<ModLoaderRoutine>();
 
 		LOG("mapcalling lua functions");
 		auto luaModule = GetModuleHandle(LuaModule.c_str());
@@ -57,18 +46,19 @@ namespace VermHook
 		mapcall(luaL_loadfile);
 		mapcall(lua_pcall);
 		mapcall(luaL_openlib);
-		mapcall(LuaRegister);
+		mapcall(luaL_register);
 		mapcall(lua_remove);
 		mapcall(luaL_loadbuffer);
 		mapcall(luaL_loadstring);
-		
+		mapcall(luaL_register);
+		mapcall(lua_pushboolean);
 #undef mapcall
 
-		Routine->PostInit();
+		routine->PostInit();
 	}
 
 	void DestroyHook()
 	{
-		Routine.get_deleter();
+		routine.reset();
 	}
 }
