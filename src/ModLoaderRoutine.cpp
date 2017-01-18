@@ -13,7 +13,7 @@ namespace VermHook
 
 		_iatInitHook = unique_ptr<IATHook>(IATHook::Hook(LuaModule, "luaL_openlibs", (DWORD)ModLoaderRoutine::InitLua));
 
-		if (!Utils::FileExists(Globals::BaseModInitFileDir))
+		if (!Utils::ElementExists(Globals::BaseModInitFileDir))
 		{
 			LOG("Globals::BaseModInitFileDir (" << string(Globals::BaseModInitFileDir) << ") doesn't exist.");
 			Globals::DllReturnValue = FALSE;

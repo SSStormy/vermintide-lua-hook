@@ -43,16 +43,19 @@ namespace VermHook
 	extern int(*lua_type)(LuaState*, int);
 	extern const char*(*lua_tolstring) (LuaState*, int, size_t*);
 	extern void(*lua_call)(LuaState*, int/*nargs*/, int /*nresults*/);
-	extern void(*lua_getfield)(LuaState*, int /*index*/, const char */*k*/);
-	extern void(*lua_pushstring)(LuaState*, const char */*s*/);
+	extern void(*lua_getfield)(LuaState*, int /*index*/, const char* /*k*/);
+	extern void(*lua_pushstring)(LuaState*, const char* /*s*/);
 	extern int(*lua_pcall)(LuaState*, int /*nargs*/, int /*nresults*/, int /*errfunc*/);
 	extern void(*luaL_openlib) (LuaState*, const char* /*libname*/, const LuaReg*, int /*nup*/);
 	extern void(*LuaRegister) (LuaState*, const char* /*libname*/, const LuaReg*);
 	extern void(*lua_remove) (LuaState*, int /*index*/);
 	extern int(*luaL_loadbuffer)(LuaState*, const char* /*buff*/, size_t, const char* /*name*/);
 	extern int(*luaL_loadstring)(LuaState*, const char*);
-	extern void(*luaL_register) (LuaState*, const char */*libname*/, const LuaReg*);
+	extern void(*luaL_register) (LuaState*, const char* /*libname*/, const LuaReg*);
 	extern void(*lua_pushboolean)(LuaState*, bool);
+    extern int (*lua_gettop)(LuaState*);
+    extern void (*lua_pop)(LuaState*, int);
+    extern void (*lua_settable)(LuaState*, int /*index*/);
 
 	void InitHook();
 	void DestroyHook();

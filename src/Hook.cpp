@@ -21,6 +21,9 @@ namespace VermHook
 	int(*luaL_loadbuffer)(LuaState*, const char* /*buff*/, size_t, const char* /*name*/);
 	int(*luaL_loadstring)(LuaState*, const char*);
 	void (*lua_pushboolean)(LuaState*, bool);
+    int (*lua_gettop)(LuaState*);
+    void (*lua_pop)(LuaState*, int);
+    void (*lua_settable)(LuaState*, int /*index*/);
 
 	unique_ptr<ModLoaderRoutine> routine = nullptr;
 
@@ -52,6 +55,9 @@ namespace VermHook
 		mapcall(luaL_loadstring);
 		mapcall(luaL_register);
 		mapcall(lua_pushboolean);
+        mapcall(lua_gettop);
+        mapcall(lua_pop);
+        mapcall(lua_settable);
 #undef mapcall
 
 		routine->PostInit();

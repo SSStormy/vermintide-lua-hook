@@ -1,7 +1,6 @@
 #pragma once
 
-#include <stdlib.h>
-#include "globals.h"
+#include "Globals.h"
 #include <Windows.h>
 
 #define SAVE_PWD char __callbackOldPwd[300]; \
@@ -17,13 +16,19 @@ namespace VermHook
 	class Utils
 	{
 	public:
-		static BOOL FileExists(LPCTSTR szPath)
+		static bool ElementExists(LPCTSTR szPath, bool mustBeFolder = false)
 		{
 			auto dwAttrib = GetFileAttributes(szPath);
 
-			return (dwAttrib != INVALID_FILE_ATTRIBUTES &&
-				!(dwAttrib & FILE_ATTRIBUTE_DIRECTORY));
+            if(dwAttrib != INVALID_FILE_ATTRIBUTES)
+            {
+                if(mustBeFolder)
+                    return dwAttrib & FILE_ATTRIBUTE_DIRECTORY;
+                return true;
+            }
+            return false;
 		}
+
 		static inline bool StringEndWith(const string &str, const string &suffix)
 		{
 			return str.size() >= suffix.size() &&
