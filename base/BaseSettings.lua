@@ -1,4 +1,4 @@
-ModLoaderSettings = ModLoaderSettings {}
+ModLoaderSettings = ModLoaderSettings or {}
 
 ModLoaderSettings.default = 
 {
