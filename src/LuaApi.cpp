@@ -1,24 +1,33 @@
-#include "include/LuaApi.h"
 #include <Windows.h>
-#include <sstring>
+#include "include/Utils.h"
+#include "include\LuaApi.h"
 
 namespace VermHook
 {
 	int LuaApi::Console::Out(LuaState* state)
-    {
-        // Handle vaargs
-        int args = lua_gettop(state);
+	{
+		// Handle vaargs
+		int args = lua_gettop(state);
+		if (args <= 0)
+			return 0;
 
-        std::wstringstream sstr;
-        for(int i = 0; i < args; i++)
-        {
-            sstr.putback(lua_tolstring(state, -1, NULL));
-            sstr.putback(' ');
-            lua_pop(state, 1);
-        }
-        
-        std::cout << ">> Lua: " << sstr << std::endl;
-        
+		std::cout << ">> Lua:";
+
+		for (int i = 0; i < args; i++)
+		{
+			// for handling a sigsegv on lua_tolstring with index 1 being nil
+			int type = lua_type(state, 1);
+
+			std::cout << " " <<
+				((type != LUA_TNIL)
+					? lua_tolstring(state, 1, NULL)
+					: "nil");
+
+			lua_remove(state, 1);
+		}
+
+		std::cout << std::endl;
+
 		return 0;
 	}
 
@@ -26,7 +35,7 @@ namespace VermHook
 	{
 		bool result = static_cast<bool>(AllocConsole());
 		lua_pushboolean(state, result);
-	
+
 		if (result)
 		{
 #pragma warning(disable:4996)
@@ -39,27 +48,38 @@ namespace VermHook
 		return 1;
 	}
 
-    int LuaApi::Directory::GetFiles(LuaState* state)
-    {
-    }
 
-    int LuaApi::Directory::GetFolders(LuaState* state)
-    {
-    }
+#define PARAM_CHECK(errmsg) \
+int argc = lua_gettop(state); \
+	if (argc == 0 || argc > 2) \
+		return luaL_error(state, errmsg); \
+	auto path = lua_tolstring(state, 1, NULL); \
+	bool dirOnly = false; \
+	luaC_pop(state); \
+	if (argc == 2) { \
+		dirOnly = lua_toboolean(state, 1); \
+		luaC_pop(state); } 
 
-    int LuaApi::Directory::ElementExists(LuaState* state)
-    {
-        
-    }
+	int LuaApi::Path::GetElements(LuaState* state)
+	{
+		PARAM_CHECK("Invalid GetElements params");
 
-    inline const char* LuaApi::Directory::AssertStrArg(LuaState* state)
-    { 
-        if(lua_gettop(state) > 1)
-        {
-            asdf // todo : either lua_error or luaL_error here (luaL preferrably)
-        }
+		if (!Utils::ElementExists(path, dirOnly))
+		{
+			lua_pushnil(state);
+			return 1;
+		}
 
-        return luaL_tolstring(state, -1, NULL);
-    }
+		std::vector<string> out;
+		Utils::GetElements((string(path) + "/*").c_str(), out, dirOnly);
+		Utils::StrVectorToIndexedTable(state, out);
+		return 1;
+	}
 
+	int LuaApi::Path::ElementExists(LuaState* state)
+	{
+		PARAM_CHECK("Invalid Elements exists params");
+		lua_pushboolean(state, Utils::ElementExists(path, dirOnly));
+		return 1;
+	}
 }

@@ -35,6 +35,11 @@
     <ClInclude Include="src\include\Routine\ModLoaderRoutine.h" />
     <ClInclude Include="src\include\Utils.h" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="base\bootstrap.lua" />
+    <None Include="base\main.lua" />
+    <None Include="base\tests.lua" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{EBB7F7ED-3DF1-4FFF-93FB-BA5237D6CA64}</ProjectGuid>
     <RootNamespace>vermhook</RootNamespace>
@@ -90,6 +95,8 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <TargetName>dinput8</TargetName>
+    <OutDir>C:\Program Files (x86)\Steam\steamapps\common\Warhammer End Times Vermintide\binaries</OutDir>
+    <PostBuildEventUseInBuild>true</PostBuildEventUseInBuild>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -100,6 +107,14 @@
     <Link>
       <SubSystem>Windows</SubSystem>
     </Link>
+    <PostBuildEvent>
+      <Command>rd /s /q "$(TargetDir)mods\base\*"
+(robocopy /MIR "$(ProjectDir)base" "$(TargetDir)mods\base") ^&amp; exit 0</Command>
+    </PostBuildEvent>
+    <PreBuildEvent>
+      <Command>
+      </Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>

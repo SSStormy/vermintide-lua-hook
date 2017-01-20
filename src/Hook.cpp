@@ -2,6 +2,7 @@
 #include "include/Globals.h"
 #include "include/IATHook.h"
 #include "include/Routine/ModLoaderRoutine.h"
+#include <assert.h>
 
 namespace VermHook
 {
@@ -20,23 +21,40 @@ namespace VermHook
 	void(*lua_remove) (LuaState*, int /*index*/);
 	int(*luaL_loadbuffer)(LuaState*, const char* /*buff*/, size_t, const char* /*name*/);
 	int(*luaL_loadstring)(LuaState*, const char*);
-	void (*lua_pushboolean)(LuaState*, bool);
-    int (*lua_gettop)(LuaState*);
-    void (*lua_pop)(LuaState*, int);
-    void (*lua_settable)(LuaState*, int /*index*/);
+	void(*lua_pushboolean)(LuaState*, bool);
+	int(*lua_gettop)(LuaState*);
+	void(*lua_settable)(LuaState*, int /*index*/);
+	int(*luaL_error)(LuaState*, const char */*fmt*/, ...);
+	void(*lua_createtable)(LuaState*, int /*narr*/, int /*nrec*/);
+	void(*lua_pushnil)(LuaState*);
+	int(*lua_toboolean)(LuaState*, int /*index*/);
+	void (*lua_rawseti)(LuaState*, int /*index*/, int /*n*/);
 
-	unique_ptr<ModLoaderRoutine> routine = nullptr;
+	inline int luaL_dofile(LuaState* state, const char* fdir)
+	{
+		return (luaL_loadfile(state, fdir) || lua_pcall(state, 0, -1, 0));
+	}
+
+	inline void luaC_pop(LuaState* state)
+	{
+		lua_remove(state, lua_gettop(state));
+	}
+
+
+	typedef ModLoaderRoutine Routinetype;
+
+	unique_ptr<Routinetype> routine = nullptr;
 
 	void InitHook()
 	{
 		LOG("Initialize hook.");
-		routine = std::make_unique<ModLoaderRoutine>();
+		routine = std::make_unique<Routinetype>();
 
 		LOG("mapcalling lua functions");
 		auto luaModule = GetModuleHandle(LuaModule.c_str());
 
 #define mapcall(name) *(void**)(&name) = GetProcAddress(luaModule, #name);\
-	if(name == nullptr) LOG(#name << " mapcall IS nullptr!")
+					assert(name != nullptr);
 
 		mapcall(luaL_openlibs);
 		mapcall(lua_pushcclosure);
@@ -55,9 +73,13 @@ namespace VermHook
 		mapcall(luaL_loadstring);
 		mapcall(luaL_register);
 		mapcall(lua_pushboolean);
-        mapcall(lua_gettop);
-        mapcall(lua_pop);
-        mapcall(lua_settable);
+		mapcall(lua_gettop);
+		mapcall(lua_settable);
+		mapcall(luaL_error);
+		mapcall(lua_createtable);
+		mapcall(lua_pushnil);
+		mapcall(lua_toboolean);
+		mapcall(lua_rawseti);
 #undef mapcall
 
 		routine->PostInit();

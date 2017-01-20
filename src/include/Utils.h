@@ -2,6 +2,8 @@
 
 #include "Globals.h"
 #include <Windows.h>
+#include <vector>
+#include "Hook.h"
 
 #define SAVE_PWD char __callbackOldPwd[300]; \
 				GetCurrentDirectory(300, __callbackOldPwd); \
@@ -16,7 +18,7 @@ namespace VermHook
 	class Utils
 	{
 	public:
-		static bool ElementExists(LPCTSTR szPath, bool mustBeFolder = false)
+		static inline bool ElementExists(LPCTSTR szPath, bool mustBeFolder = false)
 		{
 			auto dwAttrib = GetFileAttributes(szPath);
 
@@ -33,6 +35,43 @@ namespace VermHook
 		{
 			return str.size() >= suffix.size() &&
 				str.compare(str.size() - suffix.size(), suffix.size(), suffix) == 0;
+		}
+
+		static inline void GetElements(LPCSTR dir, std::vector<string>& out, bool mustBeFolder)
+		{
+			HANDLE fileHandle;
+			WIN32_FIND_DATA ffd;
+			LARGE_INTEGER szDir;
+			WIN32_FIND_DATA fileData;
+			fileHandle = FindFirstFile(dir, &ffd);
+
+			if (INVALID_HANDLE_VALUE == fileHandle)
+				return;
+			do
+			{
+				if (!mustBeFolder || ffd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+				{
+					
+					auto str = ffd.cFileName;
+					if(strcmp(str, ".") == 0|| strcmp(str, "..")  == 0)
+						continue;
+
+				 	out.push_back(ffd.cFileName);
+				}
+					
+			} while (FindNextFile(fileHandle, &ffd) != 0);
+		}
+
+		static inline void StrVectorToIndexedTable(LuaState* state, std::vector<string>& vec)
+		{
+			lua_createtable(state, vec.size(), 0);
+
+			int i = 0;
+			for (auto elem : vec)
+			{
+				lua_pushstring(state, elem.c_str());
+				lua_rawseti(state, -2, ++i);
+			}
 		}
 	};
 }

@@ -19,34 +19,41 @@ namespace VermHook
 			Globals::DllReturnValue = FALSE;
 		}
 	}
-	
+
 	void ModLoaderRoutine::InitLua(LuaState* state)
 	{
-		luaL_openlibs(state);
+#define LEXEC(msg, dir) \
+		LOG(msg); \
+		result = luaL_dofile(state, dir); \
+		if(result != 0) { \
+			LOG("==== FAILED TO INJECT MODLOADER: " << lua_tolstring(state, -1, NULL)); \
+		return; }
 
+		luaL_openlibs(state);
+	
 		LuaReg console[] =
 		{
-			{ "create", LuaApi::Console::Create },
-			{ "out", LuaApi::Console::Out },
+			{ "create",  LuaApi::Console::Create },
+			{ "out",  LuaApi::Console::Out},
 			{ NULL, NULL }
 		};
 
-		LOG("Registering console library.");
+		LuaReg path[]
+		{ 
+			{ "get_elements", LuaApi::Path::GetElements },
+			{ "element_exists", LuaApi::Path::ElementExists},
+			{ NULL, NULL }
+		};
+
+		LOG("Registering custom libraries.");
 		luaL_register(state, "console", console);
+		luaL_register(state, "path", path);
 
-		LOG("Loading base mod");
-		int result = luaL_loadfile(state, Globals::BaseModInitFileDir);
-		if (result != 0)
-		{
-			LOG("Failed loading base mod, errcode: " << result);
-			Globals::DllReturnValue = FALSE;
-			return;
-		}
+		int result = 1;
+		LEXEC("Bootstrapping...", Globals::BootstrapFileDir);
+		LEXEC("Running tests...", Globals::TestFileDir);
+		LEXEC("Running modloader base...", Globals::BaseModInitFileDir);
 
-		LOG("Goodbye C++.");
-
-		BENCHMARK_START;
-		lua_call(state, 0, 0);
-		BENCHMARK_END("Base main.lua");
+		LOG("Modloader injected.");
 	}
 }

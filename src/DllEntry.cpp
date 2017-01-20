@@ -15,21 +15,13 @@ BOOL WINAPI DllMain(HINSTANCE hInst, DWORD reason, LPVOID)
 	if (reason == DLL_PROCESS_ATTACH)
 	{
 		DisableThreadLibraryCalls(hInst);
-#if _DEBUG
-		if (AllocConsole())
-		{
+		AllocConsole();
 #pragma warning(disable:4996)
-			freopen("CONOUT$", "w", stdout);
-			freopen("CONOUT$", "w", stderr);
-			freopen("CONIN$", "r", stdin);
-			SetConsoleTitle("Vermintide LUA");
-		}
-		else
-		{
-			LOG("Failed to create debug console.");
-			return FALSE;
-		}
-#endif
+		SetConsoleTitle("Vermintide LUA");
+		freopen("CONOUT$", "w", stdout);
+		freopen("CONOUT$", "w", stderr);
+		freopen("CONIN$", "r", stdin);
+
 		LOG("DLL_PROCESS_ATTACH");
 
 		char buf[200];

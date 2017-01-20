@@ -53,9 +53,15 @@ namespace VermHook
 	extern int(*luaL_loadstring)(LuaState*, const char*);
 	extern void(*luaL_register) (LuaState*, const char* /*libname*/, const LuaReg*);
 	extern void(*lua_pushboolean)(LuaState*, bool);
-    extern int (*lua_gettop)(LuaState*);
-    extern void (*lua_pop)(LuaState*, int);
-    extern void (*lua_settable)(LuaState*, int /*index*/);
+	extern int(*lua_gettop)(LuaState*);
+	extern void(*lua_settable)(LuaState*, int /*index*/);
+	extern int(*luaL_error)(LuaState*, const char */*fmt*/, ...);
+	extern void(*lua_createtable)(LuaState*, int /*narr*/, int /*nrec*/);
+	extern void(*lua_pushnil)(LuaState*);
+	extern int(*lua_toboolean)(LuaState*, int /*index*/);
+	extern inline int luaL_dofile(LuaState* state, const char* fileDir);
+	extern inline void luaC_pop(LuaState* state);
+	extern void(*lua_rawseti)(LuaState*, int /*index*/, int /*n*/);
 
 	void InitHook();
 	void DestroyHook();
