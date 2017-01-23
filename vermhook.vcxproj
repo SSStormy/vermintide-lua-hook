@@ -35,11 +35,6 @@
     <ClInclude Include="src\include\Routine\ModLoaderRoutine.h" />
     <ClInclude Include="src\include\Utils.h" />
   </ItemGroup>
-  <ItemGroup>
-    <None Include="base\bootstrap.lua" />
-    <None Include="base\main.lua" />
-    <None Include="base\tests.lua" />
-  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{EBB7F7ED-3DF1-4FFF-93FB-BA5237D6CA64}</ProjectGuid>
     <RootNamespace>vermhook</RootNamespace>
@@ -108,8 +103,8 @@
       <SubSystem>Windows</SubSystem>
     </Link>
     <PostBuildEvent>
-      <Command>rd /s /q "$(TargetDir)mods\base\*"
-(robocopy /MIR "$(ProjectDir)base" "$(TargetDir)mods\base") ^&amp; exit 0</Command>
+      <Command>
+      </Command>
     </PostBuildEvent>
     <PreBuildEvent>
       <Command>

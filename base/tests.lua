@@ -1,3 +1,8 @@
+
+--[[-------------------------
+        Test C functions
+--]]------------------------
+
 local function test_console_out()
 	console.out("one|", "|two|", "|three|", "|four")
 	console.out()
@@ -25,7 +30,7 @@ local function test_path_elem_all_list()
 		"hello friends i am a folder",
 		"how do you do lads",
 		"i am. a very, special1 snowflak15l;e",
-		"no",
+		"test_mod",
 		"that is nice to hear, friend",
 		"another_text_file.txt",
 		"exciting, a file!",
@@ -44,7 +49,7 @@ local function test_path_elem_folder_list()
 		"hello friends i am a folder",
 		"how do you do lads",
 		"i am. a very, special1 snowflak15l;e",
-		"no",
+		"test_mod",
 		"that is nice to hear, friend",
 	}
 
@@ -64,8 +69,8 @@ local function test_path_elem_exists_folder()
 	assert(path.element_exists("mods/base/test/test_path/i am. a very, special1 snowflak15l;e", true))
 	assert(path.element_exists("mods/base/test/test_path/i am. a very, special1 snowflak15l;e"))
 
-	assert(path.element_exists("mods/base/test/test_path/no", true))
-	assert(path.element_exists("mods/base/test/test_path/no"))
+	assert(path.element_exists("mods/base/test/test_path/test_mod", true))
+	assert(path.element_exists("mods/base/test/test_path/test_mod"))
 
 	assert(not path.element_exists("mods/base/test/test_path/i dont exist", true))
 	assert(not path.element_exists("mods/base/test/test_path/textfile.txt", true))
@@ -81,6 +86,7 @@ local function test(...)
 	end
 end
 
+
 test(
 	test_console_out, 
 	test_path_elem_all_list,
@@ -88,4 +94,3 @@ test(
 	test_path_elem_exists_file,
 	test_path_elem_exists_folder
 )
-
