@@ -17,10 +17,10 @@ local function test_console_out()
 end
 
 local function test_paths(elems, expected)
-	assert(#elems == #expected)
+	assert_e(#elems == #expected)
 
 	for idx, path in ipairs(elems) do
-		assert(table.has_value(expected, path))
+		assert_e(table.has_value(expected, path))
 	end
 end
 
@@ -59,21 +59,21 @@ local function test_path_elem_folder_list()
 end
 
 local function test_path_elem_exists_file()
-	assert(Path.ElementExists("mods/base/test/test_path/textfile.txt"))
-	assert(Path.ElementExists("mods/base/test/test_path/exciting, a file!"))
-	assert(not Path.ElementExists("mods/base/test/test_path/i dont exist"))
+	assert_e(Path.ElementExists("mods/base/test/test_path/textfile.txt"))
+	assert_e(Path.ElementExists("mods/base/test/test_path/exciting, a file!"))
+	assert_e(not Path.ElementExists("mods/base/test/test_path/i dont exist"))
 	return 0
 end
 
 local function test_path_elem_exists_folder()
-	assert(Path.ElementExists("mods/base/test/test_path/i am. a very, special1 snowflak15l;e", true))
-	assert(Path.ElementExists("mods/base/test/test_path/i am. a very, special1 snowflak15l;e"))
+	assert_e(Path.ElementExists("mods/base/test/test_path/i am. a very, special1 snowflak15l;e", true))
+	assert_e(Path.ElementExists("mods/base/test/test_path/i am. a very, special1 snowflak15l;e"))
 
-	assert(Path.ElementExists("mods/base/test/test_path/test_mod", true))
-	assert(Path.ElementExists("mods/base/test/test_path/test_mod"))
+	assert_e(Path.ElementExists("mods/base/test/test_path/test_mod", true))
+	assert_e(Path.ElementExists("mods/base/test/test_path/test_mod"))
 
-	assert(not Path.ElementExists("mods/base/test/test_path/i dont exist", true))
-	assert(not Path.ElementExists("mods/base/test/test_path/textfile.txt", true))
+	assert_e(not Path.ElementExists("mods/base/test/test_path/i dont exist", true))
+	assert_e(not Path.ElementExists("mods/base/test/test_path/textfile.txt", true))
 	return 0
 end
 
@@ -82,7 +82,7 @@ local function test(...)
 	local n = select('#', ...)
 	for i = 1,n  do
 		local v = select(i, ...)
-		assert(v())
+		assert_e(v())
 	end
 end
 

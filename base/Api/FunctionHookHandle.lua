@@ -1,9 +1,9 @@
-local HookHandle = Api.class("HookHandle")
+local FunctionHookHandle = Api.class("FunctionHookHandle")
 
 --[[
         Defines a handle for a lua function hook.
         
-        At it's core, hooking works by keeping track of all active hooks (HookHandle.Hooks table)
+        At it's core, hooking works by keeping track of all active hooks (FunctionHookHandle.Hooks table)
         and by overriding the target signature with a custom function, which call the hooks
         and the original function.
         
@@ -16,44 +16,50 @@ local HookHandle = Api.class("HookHandle")
 --[[ ---------------------------------------------------------------------------------------
         Name: Initialize
         Desc: Creates a disabled hook for the given lua function signature.
-        Args: string signature of the target function;
-              function that's going to hooked/injected - the hook function
-        (opt) boolean true (default) = pre function call, false = post
-            
-        Returns: A HookHandle class instance.
+        Args: 
+            (string targetSignature)- the string signature of the target function.
+                                      E.g "Api.Std.require" or "instance.SomeFunction"
+            (function hookFunction) - The function that's going to hooked/injected
+    (opt)   (bool isPre)            - whether the function is a prehook (true, default) or posthook (false)
 --]] ---------------------------------------------------------------------------------------
-function HookHandle:initialize(targetSignature, hookFunction, isPre)
+function FunctionHookHandle:initialize(targetSignature, hookFunction, isPre)
+    assert_e(Api.IsString(script) and Api.IsFunction(hookFunction) and Api.IsBool(isPre))
+    
     self._targetSignature = targetSignature    
-    self._targetFunction = nil
-    self._isPre = isPre
-    self._isActive = false
+    self._isPre = isPre or true
     self._hookFunction = hookFunction
+        
+    self._isActive = false
+    self._targetFunction = nil
 end
 
 --[[ ---------------------------------------------------------------------------------------
-        Desc:  Stores all active hooks
+        Desc:  Stores all active hooks. You might want to stay away from writing to this.
         Key:   string signature of the target function (e.g: "Api.Std.loadfile" )
         Value: 
         {
             Original = Reference to original function of the same signature
-            PreHooks = indexed table of active pre hooks to this function
-            PostHooks = indexed table of active post hooks to this function
+            PreHooks = indexed table of active pre FunctionHookHandle to this function
+            PostHooks = indexed table of active post FunctionHookHandle to this function
         }
 --]] ---------------------------------------------------------------------------------------
-HookHandle.Hooks = { }
+FunctionHookHandle.Hooks = { }
     
 --[[ ---------------------------------------------------------------------------------------
         Name: Create
         Desc: Creates and enables a hook for the given lua function signature. 
-        Args: string signature of the target function;
-          function that's going to hooked/injected - the hook function
-        (opt) boolean true (default) = pre function call, false = post
-        
-        Returns: A HookHandle class instance.
+        Args: 
+            (string targetSignature)- the string signature of the target function.
+                                      E.g "Api.Std.require" or "instance.SomeFunction"
+            (function hookFunction) - The function that's going to hooked/injected
+    (opt)   (bool isPre)            - whether the function is a prehook (true) or posthook (false)
+                                      default = true
+    (opt)   (bool allowDuplicates)  - see FunctionHookHandle:Enable(allowDuplicates)
+        Returns: A FunctionHookHandle class instance.
 --]] ---------------------------------------------------------------------------------------
-HookHandle.Create = function(funcSignature, preHook)
-    local handle = hookHandleClass(funcSignature, preHook or true)
-    handle:enable()
+FunctionHookHandle.Create = function(targetSignature, hookFunction, isPre, allowDuplicates)
+    local handle = FunctionHookHandleClass(funcSignature, hookFunction, isPre)
+    handle:Enable(allowDuplicates)
     return handle
 end
 
@@ -61,14 +67,18 @@ end
 --[[ ---------------------------------------------------------------------------------------
         Name: GetTargetFunction
         Desc: Gets and returns the hook handler's target function.
-        Args: (optional )bool - true to use cache (set during HookHandle:Enable()) (default), 
+        Args: (optional )bool - true to use cache (set during FunctionHookHandle:Enable()) (default), 
                      false to eval a new reference.
         Returns: The target function or nil if it was not found.
 --]] ---------------------------------------------------------------------------------------
-function HookHandle:GetTargetFunction(shouldUseCache)
-    
-    if (shouldUseCache or true) and self._targetFunction ~= nil then
-        return self._targetFunction
+function FunctionHookHandle:GetTargetFunction(shouldUseCache)
+    if shouldUseCache or true then
+        if self._targetFunction == nil then 
+            Log.Warn("Tried to force cache GetTargetFunction but cache was null.")
+            Log.Debug("Function hook handle dump:", Api.json.encode(self))
+        end
+        
+        return self._targetFunction 
     else
         local ret = Api.pcall(Api.Std.loadstring("return " .. self:GetTargetSignature()))
         if not ret then
@@ -87,27 +97,27 @@ end
         Name: GetHookFunction
         Returns: Returns the hook's hook function.
 --]] ---------------------------------------------------------------------------------------
-function HookHandle:GetHookFunction() return self._hookFunction end
+function FunctionHookHandle:GetHookFunction() return self._hookFunction end
 
 --[[ ---------------------------------------------------------------------------------------
         Name: GetTargetSignature
         Returns: The signature of the target function for this hook handler.
 --]] ---------------------------------------------------------------------------------------
-function HookHandle:GetTargetSignature() return self._targetSignature end
+function FunctionHookHandle:GetTargetSignature() return self._targetSignature end
 
 --[[ ---------------------------------------------------------------------------------------
         Name: IsPreHook
         Desc: Checks whether the handled hook is a precall (true) or a postcall (false) hook 
         Returns: bool, true = precall; false = postcall
 --]] ---------------------------------------------------------------------------------------
-function HookHandle:IsPreHook() return self._isPre end
+function FunctionHookHandle:IsPreHook() return self._isPre end
 
 --[[ ---------------------------------------------------------------------------------------
         Name: IsActive
         Desc: Checks whether the handled hook is active or otherwise.
         Returns: bool, true = active, false = otherwise
 --]] ---------------------------------------------------------------------------------------
-function HookHandle:IsActive() return self._isActive end
+function FunctionHookHandle:IsActive() return self._isActive end
 
 --[[ ---------------------------------------------------------------------------------------
         Name: SetPreHook
@@ -115,7 +125,8 @@ function HookHandle:IsActive() return self._isActive end
               Can only be done if not IsActive().
         Args: bool, true = set to prehook; false = set to posthook.
 --]] ---------------------------------------------------------------------------------------
-function HookHandle:SetPreHook(isPreHook)
+function FunctionHookHandle:SetPreHook(isPreHook)
+    assert_e(Api.IsBool(isPreHook))
     if self:IsActive() then return end
     self._isPre = isPreHook
 end
@@ -124,14 +135,42 @@ end
         Name: Disable
         Desc: Disables the hook. Can only be done if IsActive()
 --]] ---------------------------------------------------------------------------------------
-function HookHandle:Disable()
-    assert(false) -- todo : disable hook
-    
+function FunctionHookHandle:Disable()
     if not self:IsActive() then return end
+    local original = assert_e(Api.IsFunction(self:GetTargetFunction()))
+    local sign = self:GetTargetSignature()
+    
+    -- assign the original function back to it's signature
+    Api.std.loadstring(sign .. "=...")(original)
+    local entry = assert_e(Api.IsTable(FunctionHookHandle.Hooks[sign]))
    
-   self._isActive = false
+    -- figure out which table we should be removing the hook from
+    local tabl
+    if self:IsPreHook() then
+        tabl = entry.PreHooks
+    else
+        tabl = entry.PostHooks
+    end
+    assert_e(Api.IsTable(tabl))
+    
+    -- remove our FunctionHookHandle from the hook table.
+    local index = tabl:get_index(self)
+    if index == nil then
+        Log.Warn("Tried to disable funcion handle hook that is not registered in the hook table.");
+        Log.Debug("FunctionHookHandle dump:", Api.json.encode(self))
+        Log.Debug("Hook table dump:", Api.json.encode(FunctionHookHandle.Hooks))
+        return 
+    end
+    table.remove(tabl, index)
+    
+    -- check if the entry now hold two empty tables. remove if so
+    if #entry.PreHooks <= 0 and #entry.PostHooks <= 0 then
+        Log.Debug("Removed now empty hook entry for signature", sign)
+        FunctionHookHandle.Hooks[sign] = nil
+    end
+    
+    self._isActive = false
 end
-
 
 --[[ ---------------------------------------------------------------------------------------
         Name: Enable
@@ -143,20 +182,20 @@ end
                 False = do not hook, report message to Log.Warn and extra info to Log.Debug (default)
                 
 --]] ---------------------------------------------------------------------------------------
-function HookHandle:Enable(allowDuplicates)
+function FunctionHookHandle:Enable(allowDuplicates)
     if self:IsActive() then return end
     
     self._targetFunction = self:GetTargetFunction(false)
     
     -- make sure signature is all good
     if self._targetFunction == nil then
-        Log.Warn("Failed evaluating target function for HookHandle.")
+        Log.Warn("Failed evaluating target function for FunctionHookHandle.")
         Log.Debug("Hook dump:", Api.json.encode(self))
         return             
     end
     
     -- hook entry didn't exist, create a new one.
-    if HookHandle.Hooks[self:GetTargetSignature()] == nil then
+    if FunctionHookHandle.Hooks[self:GetTargetSignature()] == nil then
         self:_create_hooks_entry()
     end
     
@@ -173,7 +212,7 @@ local targetOverrider =  [[
 local signature = ...
 
 return function(...) 
-    local entry = HookHandle.Hooks[signature]
+    local entry = FunctionHookHandle.Hooks[signature]
     
     local function callAll(tabl)
         for k,v in ipairs(tabl) do
@@ -196,14 +235,14 @@ return function(...)
 end
 ]]
 
-function HookHandle:_create_hooks_entry()
+function FunctionHookHandle:_create_hooks_entry()
     
     -- have to be extra sure
     local sign = self:GetTargetSignature()
-    assert(not HookHandle.Hooks[sign])
+    assert_e(not FunctionHookHandle.Hooks[sign])
     
     -- add entry
-    HookHandle.Hooks[sign] =
+    FunctionHookHandle.Hooks[sign] =
     {
         Original = self:GetTargetFunction(),
         PreHooks = { },
@@ -219,9 +258,9 @@ function HookHandle:_create_hooks_entry()
     Api.Std.loadstring(sign .. "= ...")(customFunc) 
 end
 
-function HookHandle:_append_hooks_entry(allowDuplicates)
-    local entry = HookHandle.Hooks[self:GetTargetSignature()]
-    assert(entry)
+function FunctionHookHandle:_append_hooks_entry(allowDuplicates)
+    local entry = FunctionHookHandle.Hooks[self:GetTargetSignature()]
+    assert_e(entry)
     
     local tabl = nil
     

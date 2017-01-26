@@ -1,129 +1,175 @@
 local ModManager = Api.class("ModManager")
-ModManager:_mod_loader_class = Api.dofile_e("mods/base/internal/LuaModLoader.lua")
+ModManager._mod_loader_class = Api.dofile_e("mods/base/internal/LuaModLoader.lua")
+
+--[[
+    An indexed table of string that represent mod keys of mods that are disabled
+--]]
+local KEY_DISABLED = "DisabledMods"         
 
 --[[ ---------------------------------------------------------------------------------------
         Name: initialize
         Desc: Constructs a ModManager and loads available mods
         Args: 
             (string modDir)     - directory of the folder in which mods are stored in
-            (string configDir)  - directory of the mod manager config. 
-                                  a new file will be created if file at dir doesn't exist 
+            (string configDir)  - directory pointing to the the mod manager config file.
+                                A new file will be created if file at dir doesn't exist 
             (AbstractHook ...)  - vaargs of abstract hook, that will be passed to the loader  
 --]] ---------------------------------------------------------------------------------------
 function ModManager:initialize(modDir, configDir, ...)
-    assert(Path.ElementExists(modDir, true), "modDir " .. modDir .. " doesn't exist in the fs.")
+    assert_e(Api.IsString(modDir) and Api.IsString(configDir))
+    assert_e(Path.ElementExists(modDir, true), "modDir " .. modDir .. " doesn't exist in the fs.")
+    
+    self._config, self._cfg_load_result = self:LoadConfig(configDir)
+    
     self._mod_dir = modDir
     self._config_dir = configDir
 
-
     self._mod_loader = self_mod_loader_class(...)
-    self._mods_loaded = self._mod_loader:LoadModsInDir(self._mod_dir,  
-        function(modFolder, errCode, err)
-            Log.Write("ModLoadedError:", modfolder .. ":", err, "(" .. tostring(errCode) .. ")")
-        end)
+    self._mods, self._moad_load_result = self._mod_loader:LoadModsInDir(self._mod_dir, self._config[KEY_DISABLED])
+end
+
+--[[ ---------------------------------------------------------------------------------------
+        Name: GetMods
+        Returns: (table) returns a table of loaded ModHandles. 
+                  Signature is equal to that of the mod list returned from
+                  LuaModLoader:LoadModsInDir
+--]] ---------------------------------------------------------------------------------------
+function ModManager:GetMods() return self._mods end
+
+--[[ ---------------------------------------------------------------------------------------
+        Name: GetLoadModsError
+        Returns: (table) Returns the error table returned by LoadModsInDir.
+--]] ---------------------------------------------------------------------------------------
+function ModManager:GetLoadModsError() return self._moad_load_result end
+    
+--[[ ---------------------------------------------------------------------------------------
+        Name: GetLoadConfigError
+        Returns: (string) Returns the error message LoadConfig returned if config
+                          loading did fail. Otherwise, nil.
+--]] ---------------------------------------------------------------------------------------
+function ModManager:GetLoadConfigError() return self._cfg_load_result end
+
+--[[ ---------------------------------------------------------------------------------------
+        Name: GetModDir
+        Returns: (string) The folder of mods this mod manager loads from.
+--]] ---------------------------------------------------------------------------------------
+function ModManager:GetModDir() return self._mod_dir end
+    
+--[[ ---------------------------------------------------------------------------------------
+        Name: GetConfigDir
+        Returns: (table) A directory pointing to the mod manager's config file.
+--]] ---------------------------------------------------------------------------------------
+function ModManager:GetConfigDir() return self._config_dir end
+
+--[[ ---------------------------------------------------------------------------------------
+        Name: GetConfig
+        Returns: (table) The config of the mod loader as a table.
+--]] ---------------------------------------------------------------------------------------
+function ModManager:GetConfig() return self._config end
+
+
+--[[ ---------------------------------------------------------------------------------------
+        Name: Enable
+        Desc: Enables a given ModHandle, if exists in the mod list but is not enabled.
+              After enabling the mod, the hooks will not be initialized. The game
+              needs to be restarted in order to do that.
+--]] ---------------------------------------------------------------------------------------
+function ModManager:Enable(modHandle)
+    assert_e(Api.IsTable(modHandle))
+    
+    local key = modHandle:GetKey()
+
+    if self._mods[key] == nil then return end
+    if modHandle:IsEnabled() then return end
+    
+    local disabledMods = modHandle:GetConfig()[DisabledMods]
+    local index = disabledMods:get_index(key)
+    
+    if index == nil then 
+        Log.Warn("Tried to enable mod while it is not in the disabled list.")
+        Log.Debug("Mod handle dump:", Api.json.encode(modHandle))
+        Log.Debug("Disabled mod dump:", Api.json.encode(disabledMods))
+        return
+    end
+    
+    modHandle._enabled = true
+    table.remove(disabledMods, index)
+    self:SaveConfig()
+end
+    
+--[[ ---------------------------------------------------------------------------------------
+        Name: Disable
+        Desc: Disables a given mod handle from being loaded. Once disabled, the mod's hooks
+              will persist until the game restarts.
+--]] ---------------------------------------------------------------------------------------
+function ModManager:Disable(modHandle)
+    assert_e(Api.IsTable(modHandle))
+    
+    local key = modHandle:GetKey()
+    
+    if self._mods[key] == nil then return end
+    if not modHandle:IsEnabled() then return end
+    local disabledMods = modHandle:GetConfig()[DisabledMods]
+   
+    -- check for duplicates
+    local index = disabledMods:get_index(key)
+    if index ~= nil then return end
+   
+    table.insert(disabledMods, key)
+    modHandle._enabled = false
+    self:SaveConfig()
+end    
+
+    
+--[[ ---------------------------------------------------------------------------------------
+        Name: SaveConfig
+        Desc: Saves the mod manager's config back to the same file pointed by GetConfigDir()
+        Returns:
+            On success:     nil
+            On Failiure:    (string) error message
+--]] ---------------------------------------------------------------------------------------
+function ModManager:SaveConfig()
+    local fHandle, err = io.open(self:GetConfigDir(), "w+")
+    if not fHandle then return err end
+    
+    fHandle:write(Api.json.encode(self.GetConfig()))
 end
 
 --[[ ---------------------------------------------------------------------------------------
         Name: LoadConfig 
         Desc: Static function. Loads and verifies the schema of a mod config.
         Args: 
-            (string configDir)  - directory of the mod manager config. 
+            (string configDir)  - directory pointing to the the mod manager config file.
         Returns:
             (table)     - Either the loaded config or a new empty table.
             (string)    - Error message. If the config was loaded successfully, this is nil.
 --]] ---------------------------------------------------------------------------------------
 function ModManager.LoadConfig(configDir)
-   assert(false) -- todo : LoadConfig 
-end
-
-Log.Write("Loaded mods:", tostring(modsLoaded))
-
-requireHook:Inject()
-
-Log.Write("Main.lua is done.")   
-end
-
-function ModManager:GetMods()
-
-function ModManager:Enable()
+    assert_e(Api.IsString(configDir))
     
-function ModManager:Disable()
-
-
-local ModHandle = Api.class("ModHandle")
-
---[[ ---------------------------------------------------------------------------------------
-        Name: initialize
-        Desc: The constructor for immutable ModHandle class instances. Should only be used by
-              LuaModLoader.
-        Args: 
-            (ModManager owner)  - a reference to the ModManager that owns this handle.
-            (string name)       - the name of the mod
-            (string version)    - the version of the mod. This doesn't have to stick to a 
-                                versioning scheme. 
-    (opt)   (string author)     - the author of the mod (default: "Anonymous")
-    (opt)   (string contact)    - the contact info for the 
-    (opt)   (string website)    - the website of the mod
---]] ---------------------------------------------------------------------------------------
-function ModHandle:initialize(owner, name, version, author, contact, website)
-    self._owner = owner
-    self._name = name
-    self._verion = version
-    self._author = author or "Anonymous" 
-    self._contact = contact or nil
-    self._website = website or nil
+    -- [[ read/parse json ]] --
+    local cfg = Api.SafeParseJsonFile(configDir)
+    if Api.IsString(cfg) then return {}, cfg end
     
-    sell._enabled = false
-end
-
-
---[[ ---------------------------------------------------------------------------------------
-        Name: GetKey 
-        Desc: Returns a human readable key, which is guaranteed to be equal to keys of 
-              mod handles which share the same name, version and author as this mod handle.
-        Returns: (string) key
---]] ---------------------------------------------------------------------------------------
-function ModHandle:GetKey()
-    return self:GetName() .. " " .. self:GetVersion() .. " by " .. self:GetAuthor()
-end
-
---[[ ---------------------------------------------------------------------------------------
-        Name: IsEnabled 
-        Desc: Checks if the handled mod is enabled
-        Returns: (bool) true = enabled, false otherwise 
---]] ---------------------------------------------------------------------------------------
-function ModHandle:IsEnabled() return self:_enabled end
- 
---[[ ---------------------------------------------------------------------------------------
-        Name: GetName 
-        Returns: (string) the name of the mod 
---]] ---------------------------------------------------------------------------------------   
-function ModHandle:GetName() return self:_name end
-
---[[ ---------------------------------------------------------------------------------------
-        Name: GetVersion 
-        Returns: (string) the version of the mod 
---]] ---------------------------------------------------------------------------------------   
-function ModHandle:GetVersion() return self:_version end
-
---[[ ---------------------------------------------------------------------------------------
-        Name: GetAuthor 
-        Returns: (string) the author of the mod 
---]] ---------------------------------------------------------------------------------------   
-function ModHandle:GetAuthor() return self:_author end
-
---[[ ---------------------------------------------------------------------------------------
-        Name: GetContact 
-        Returns: (string) the contact of the mod's author or nil 
---]] ---------------------------------------------------------------------------------------   
-function ModHandle:GetContact() return self:_contact end
-
---[[ ---------------------------------------------------------------------------------------
-        Name: GetWebsite 
-        Returns: (string) the website of the mod or nil
---]] ---------------------------------------------------------------------------------------   
-function ModHandle:GetWebsite() return self:_website end
+    -- [[ verify schema ]] --
+    local function jsonVerifyArray(cfg, key, typecheck)
+        if cfg[key] == nil                      then return "cfg." .. KEY_DISABLED .. " is nil." end
+        if not Api.IsTable(cfg[key])            then return "cfg." .. KEY_DISABLED .. " is not a table." end
+        
+        -- type check elements
+        for i,v in cfg[key] do 
+            if not typecheck(v) then 
+                return "cfg." .. KEY_DISABLED .. "[" .. tostring(i) .. "]" .. " is not a string." 
+            end
+        end
+        
+    end
     
+    local result 
+    result = jsonVerifyArray(cfg, KEY_DISABLED, Api.IsString) if result then return {}, result end
+    
+    return cfg, nil
+end
 
 return ModManager
 

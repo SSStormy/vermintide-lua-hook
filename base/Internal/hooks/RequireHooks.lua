@@ -2,7 +2,7 @@ local absSuper = Api._internal.GetAbstractHook()
 local RequireHooks = Api.class("RequireHooks", absSuper)
 
 function RequireHooks:initialize()
-    absSuper.initialize(self, "Require")
+    absSuper.initialize(self, Api._internal.RequireKey)
 end
 
 function RequireHooks:Inject()
