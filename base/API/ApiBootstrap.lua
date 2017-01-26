@@ -57,11 +57,16 @@ Api.IsTable     = function(obj) return Api.IsType(obj, "table") end
     
 
 --[[ ---------------------------------------------------------------------------------------
-        Classes/imports
+        Imported libraries 
 --]] ---------------------------------------------------------------------------------------
 
 Api.class = Api.Std.require("mods/base/imports/middleclass")
 Api.json = Api.Std.require("mods/base/imports/dkjson")
-Api.hookHandle = Api.Std.require("mods/base/Api/HookHandle")
+
+--[[ ---------------------------------------------------------------------------------------
+        Classes 
+--]] ---------------------------------------------------------------------------------------
+
+Api.HookHandle = Api.Std.require("mods/base/Api/HookHandle")
 
 Log.Write("Api bootstrap done.")
