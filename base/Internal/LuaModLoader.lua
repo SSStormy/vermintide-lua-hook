@@ -1,6 +1,4 @@
-local hJson = HookGlobals.dofile_base("imports/dkjson.lua")
-
-LuaModLoader = LuaModLoader or HookGlobals.class("LuaModLoader")
+local LuaModLoader = Api.class("LuaModLoader")
 
 LuaModLoader.static =
 {
@@ -13,7 +11,7 @@ LuaModLoader.static =
 }
 
 function LuaModLoader:initialize(...)
-    self.config_readers = {...}
+    self._configReaders = {...}
 end
 
 
@@ -21,28 +19,28 @@ end
     Loads all mods (not including the base mod) in the given directory.
     errorHandler signature:
         string - mod folder
-        int    - error code (see LuaModLoader.static.loadModsError_*)
+        int    - error code (see LuaModLoader.loadModsError_*)
         string - error message
     
     returns: int:
-                if negative:    see LuaModLoader.static.loadModsReturn_*,
+                if negative:    see LuaModLoader.loadModsReturn_*,
                 non-negative:   amount of mods loaded.
                 
 --]]
-function LuaModLoader:load_mods_in_dir(dir, errorHandler)
+function LuaModLoader:LoadModsInDir(dir, errorHandler)
     modsLoaded = 0
     
     -- dont bother iterating over a folder that doesn't exist
-    if not path.element_exists(dir, true) then
-        return self.static.loadModsReturn_noDir
+    if not Path.ElementExists(dir, true) then
+        return self.loadModsError_noDir
     end
     
-    for _, modFolder in ipairs(path.get_elements(dir)) do
-        local code, err = self.load_mod(modFolder)
+    for _, modDir in ipairs(Path.GetElements(dir)) do
+        local code, err = self:LoadMod(modDir)
         
         -- error handle load_mod
-        if errorHandler ~= nil and code ~= self.static.loadModsError_success then
-            errorHandler(modFolder, code, err)
+        if errorHandler ~= nil and code ~= self.loadModsError_success then
+            errorHandler(modDir, code, err)
         else
             modsLoaded = modsLoaded + 1
         end
@@ -54,36 +52,40 @@ end
 --[[
     Loads a mod in the given directory
     Returns:
-        int     - error code. (see LuaModLoader.static.loadModsError_*)
+        int     - error code. (see LuaModLoader.loadModsError_*)
         string  - error message or nil.
 --]]
-function LuaModLoader:load_mod(dir)
+function LuaModLoader:LoadMod(dir)
+    assert(dir ~= nil)
     
-    if modFolder ~= "base"  then
+    if dir ~= "base"  then
         
         -- read config.json in mod folder and error handle
-        local fileCfg, fopenErr = io.open("./mods/" .. modFolder .. "/" .. "config.json", "r")
+        local fileCfg, fopenErr = io.open("./mods/" .. dir .. "/" .. "config.json", "r")
         
         if fileCfg == nil then
-            return self.static.loadModsError_ioConfig, fopenErr
+            return self.loadModsError_ioConfig, fopenErr
         end 
         
         -- read everything in the config file then pass that to our json decoder, error handle.
-        local cfg, pos, jsonErr = hJson.decode (fileCfg:read("*all"), 1, nil)
+        local cfg, pos, jsonErr = Api.json.decode (fileCfg:read("*all"), 1, nil)
         
         if jsonErr then
-            return self.static.loadModsReturn_parseConfig, jsonErr
+            return self.loadModsError_parseConfig, jsonErr
         end
             
         -- iterate over all readers and let them read their part of the config.
-        for __, reader in ipairs(self.config_readers) do
-            local code, err = reader.read_config(cfg, modFolder)
+        for __, reader in ipairs(self._configReaders) do
+            local code, err = reader:ReadConfig(cfg, dir)
             
             if code ~= 0 then
-                return self.static.loadModsReturn_parseConfig, err
+                return self.loadModsError_parseConfig, err
             end
         end
     end
 
-    return self.static.loadModsReturn_success, nil
+    Log.Debug("Loaded", dir)
+    return self.loadModsError_success, nil
 end
+
+return LuaModLoader

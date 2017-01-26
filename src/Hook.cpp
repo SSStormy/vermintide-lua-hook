@@ -28,16 +28,35 @@ namespace VermHook
 	void(*lua_createtable)(LuaState*, int /*narr*/, int /*nrec*/);
 	void(*lua_pushnil)(LuaState*);
 	int(*lua_toboolean)(LuaState*, int /*index*/);
-	void (*lua_rawseti)(LuaState*, int /*index*/, int /*n*/);
+	void(*lua_rawseti)(LuaState*, int /*index*/, int /*n*/);
+	void(*lua_gettable)(LuaState*, int /*index*/);
+
+#define lua_pop_top lua_remove(state, lua_gettop(state))
+
+	inline bool luaC_toboolean(LuaState* state, int index)
+	{
+		return lua_toboolean(state, index) == 1;
+	}
 
 	inline int luaL_dofile(LuaState* state, const char* fdir)
 	{
 		return (luaL_loadfile(state, fdir) || lua_pcall(state, 0, -1, 0));
 	}
 
-	inline void luaC_pop(LuaState* state)
+	inline void luaC_pop(LuaState* state, int n)
 	{
-		lua_remove(state, lua_gettop(state));
+		assert(n > 0);
+
+		if (n == 1)
+		{
+			lua_pop_top;
+			return;
+		}
+
+		for (int i = 0; i < n; i++)
+		{
+			lua_pop_top;
+		}
 	}
 
 
@@ -47,10 +66,10 @@ namespace VermHook
 
 	void InitHook()
 	{
-		LOG("Initialize hook.");
+		Logger::Debug("Initialize hook.");
 		routine = std::make_unique<Routinetype>();
 
-		LOG("mapcalling lua functions");
+		Logger::Debug("mapcalling lua functions");
 		auto luaModule = GetModuleHandle(LuaModule.c_str());
 
 #define mapcall(name) *(void**)(&name) = GetProcAddress(luaModule, #name);\
@@ -80,6 +99,7 @@ namespace VermHook
 		mapcall(lua_pushnil);
 		mapcall(lua_toboolean);
 		mapcall(lua_rawseti);
+		mapcall(lua_gettable);
 #undef mapcall
 
 		routine->PostInit();

@@ -6,12 +6,18 @@ namespace VermHook
 	class LuaApi
 	{
 	public:
-		class Console
+		class Log
 		{
 		public:
-			static int Out(LuaState* state);
+			static int Write(LuaState* state);
+			static int Warn(LuaState* state);
+			static int Debug(LuaState* state);
 			static int Create(LuaState* state);
+
+		private:
+			static string HandleConsoleOut(LuaState* state, string prefix);
 		};
+
 		class Path
 		{
 		public:

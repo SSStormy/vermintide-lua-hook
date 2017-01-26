@@ -23,6 +23,7 @@
     <ClCompile Include="src\DumpLuaRoutine.cpp" />
     <ClCompile Include="src\Hook.cpp" />
     <ClCompile Include="src\IATHook.cpp" />
+    <ClCompile Include="src\Log.cpp" />
     <ClCompile Include="src\LuaApi.cpp" />
     <ClCompile Include="src\ModLoaderRoutine.cpp" />
   </ItemGroup>
@@ -30,6 +31,7 @@
     <ClInclude Include="src\include\Globals.h" />
     <ClInclude Include="src\include\Hook.h" />
     <ClInclude Include="src\include\IATHook.h" />
+    <ClInclude Include="src\include\Log.h" />
     <ClInclude Include="src\include\LuaApi.h" />
     <ClInclude Include="src\include\Routine\DumpLuaRoutine.h" />
     <ClInclude Include="src\include\Routine\ModLoaderRoutine.h" />
@@ -90,7 +92,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <TargetName>dinput8</TargetName>
-    <OutDir>C:\Program Files (x86)\Steam\steamapps\common\Warhammer End Times Vermintide\binaries</OutDir>
+    <OutDir>C:\Program Files (x86)\Steam\steamapps\common\Warhammer End Times Vermintide\binaries\</OutDir>
     <PostBuildEventUseInBuild>true</PostBuildEventUseInBuild>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">

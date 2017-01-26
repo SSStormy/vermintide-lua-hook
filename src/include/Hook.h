@@ -60,8 +60,13 @@ namespace VermHook
 	extern void(*lua_pushnil)(LuaState*);
 	extern int(*lua_toboolean)(LuaState*, int /*index*/);
 	extern inline int luaL_dofile(LuaState* state, const char* fileDir);
-	extern inline void luaC_pop(LuaState* state);
 	extern void(*lua_rawseti)(LuaState*, int /*index*/, int /*n*/);
+	extern void(*lua_gettable)(LuaState*, int /*index*/);
+#define lua_getglobal(L,s)  lua_getfield(L, LUA_GLOBALSINDEX, s)
+
+	// luaC for lua custom
+	extern inline void luaC_pop(LuaState* state, int n = 1);
+	extern inline bool luaC_toboolean(LuaState* state,  int index);
 
 	void InitHook();
 	void DestroyHook();

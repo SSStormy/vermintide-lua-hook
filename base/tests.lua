@@ -4,15 +4,15 @@
 --]]------------------------
 
 local function test_console_out()
-	console.out("one|", "|two|", "|three|", "|four")
-	console.out()
-	console.out(nil)
-	console.out(nil, nil)
-	console.out(nil, nil, nil)
-	console.out(nil, "|mixed|", nil)
-	console.out("is that a nil at the end|", "|mixed|", nil)
-	console.out(nil, "|mixed|", "|it's at the start")
-	console.out("ohno|", nil, "|it's in the middle")
+	Log.Write("one|", "|two|", "|three|", "|four")
+	Log.Write()
+	Log.Write(nil)
+	Log.Write(nil, nil)
+	Log.Write(nil, nil, nil)
+	Log.Write(nil, "|mixed|", nil)
+	Log.Write("is that a nil at the end|", "|mixed|", nil)
+	Log.Write(nil, "|mixed|", "|it's at the start")
+	Log.Write("ohno|", nil, "|it's in the middle")
 	return 0
 end
 
@@ -25,7 +25,7 @@ local function test_paths(elems, expected)
 end
 
 local function test_path_elem_all_list()
-	local elems = path.get_elements("mods/base/test/test_path")
+	local elems = Path.GetElements("mods/base/test/test_path")
 	local expected = {
 		"hello friends i am a folder",
 		"how do you do lads",
@@ -44,7 +44,7 @@ local function test_path_elem_all_list()
 end
 
 local function test_path_elem_folder_list()
-	local elems = path.get_elements("mods/base/test/test_path", true)
+	local elems = Path.GetElements("mods/base/test/test_path", true)
 		local expected = {
 		"hello friends i am a folder",
 		"how do you do lads",
@@ -59,21 +59,21 @@ local function test_path_elem_folder_list()
 end
 
 local function test_path_elem_exists_file()
-	assert(path.element_exists("mods/base/test/test_path/textfile.txt"))
-	assert(path.element_exists("mods/base/test/test_path/exciting, a file!"))
-	assert(not path.element_exists("mods/base/test/test_path/i dont exist"))
+	assert(Path.ElementExists("mods/base/test/test_path/textfile.txt"))
+	assert(Path.ElementExists("mods/base/test/test_path/exciting, a file!"))
+	assert(not Path.ElementExists("mods/base/test/test_path/i dont exist"))
 	return 0
 end
 
 local function test_path_elem_exists_folder()
-	assert(path.element_exists("mods/base/test/test_path/i am. a very, special1 snowflak15l;e", true))
-	assert(path.element_exists("mods/base/test/test_path/i am. a very, special1 snowflak15l;e"))
+	assert(Path.ElementExists("mods/base/test/test_path/i am. a very, special1 snowflak15l;e", true))
+	assert(Path.ElementExists("mods/base/test/test_path/i am. a very, special1 snowflak15l;e"))
 
-	assert(path.element_exists("mods/base/test/test_path/test_mod", true))
-	assert(path.element_exists("mods/base/test/test_path/test_mod"))
+	assert(Path.ElementExists("mods/base/test/test_path/test_mod", true))
+	assert(Path.ElementExists("mods/base/test/test_path/test_mod"))
 
-	assert(not path.element_exists("mods/base/test/test_path/i dont exist", true))
-	assert(not path.element_exists("mods/base/test/test_path/textfile.txt", true))
+	assert(not Path.ElementExists("mods/base/test/test_path/i dont exist", true))
+	assert(not Path.ElementExists("mods/base/test/test_path/textfile.txt", true))
 	return 0
 end
 

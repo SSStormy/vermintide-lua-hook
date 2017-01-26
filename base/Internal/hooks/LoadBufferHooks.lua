@@ -1,0 +1,18 @@
+local absSuper =  Api._internal.GetAbstractHook()
+local LoadBufferHooks = Api.class("LoadBufferHooks", absSuper)
+
+function LoadBufferHooks:initialize()
+    absSuper.initialize(self, "LoadBuffer")
+end
+
+-- called by cpp
+function LoadBufferHooks:_notify_pre(name)
+    self:HandleHook(self._preHooks, name)
+end
+
+-- called by cpp
+function LoadBufferHooks:_notify_post(name)
+    self:HandleHook(self._postHooks, name)
+end
+
+return LoadBufferHooks
