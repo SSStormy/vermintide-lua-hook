@@ -1,27 +1,14 @@
-HookGlobals.dofile_base("LuaModLoader.lua")
-HookGlobals.dofile_base("hooks/RequireHooks.lua")
-HookGlobals.dofile_base("hooks/LoadBufferHooks.lua")
+local requireHook = Api.dofile_e("mods/base/internal/hooks/RequireHooks.lua")()
+local loadBufferHook = Api.dofile_e("mods/base/internal/hooks/LoadBufferHooks.lua")()
 
+assert(requireHook)
+assert(loadBufferHook)
 
-if false then
-    console.create()
-end
+local modManager = Api.dofile_e("mods/base/Api/ModManager.lua")("mods/", "mods/modmanager.json", requireHook, loadBufferHook)
 
-console.out("hooks")
-local requireHooks = RequireHooks()
-console.out("past hooks")
-_G.HookGlobals.LoadBufferHook = LoadBufferHooks()
+assert(modManager)
 
+_G.LoadBufferHook = loadBufferHook
+requireHook:Inject()
 
-local modLoader = LuaModLoader(requireHooks, _G.HookGlobals.LoadBufferHook)
-
-local modsLoaded = modLoader:load_mods_in_dir("mods",  
-    function(modFolder, errCode, err)
-        console.out(modfolder .. ":", err, "(" .. tostring(errCode) .. ")")
-    end)
-
-console.out("Loaded mods:", tostring(modsLoaded))
-
-requireHooks:inject()
-
-console.out("Main.lua is done.")
+Log.Write("Main.lua is done.") 

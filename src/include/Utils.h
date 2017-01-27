@@ -24,8 +24,8 @@ namespace VermHook
 
             if(dwAttrib != INVALID_FILE_ATTRIBUTES)
             {
-                if(mustBeFolder)
-                    return dwAttrib & FILE_ATTRIBUTE_DIRECTORY;
+				if (mustBeFolder)
+					return (dwAttrib & FILE_ATTRIBUTE_DIRECTORY) != 0;
                 return true;
             }
             return false;

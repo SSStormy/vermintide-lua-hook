@@ -16,13 +16,14 @@ BOOL WINAPI DllMain(HINSTANCE hInst, DWORD reason, LPVOID)
 	{
 		DisableThreadLibraryCalls(hInst);
 		AllocConsole();
+
 #pragma warning(disable:4996)
-		SetConsoleTitle("Vermintide LUA");
+		SetConsoleTitle("Vermintide LUA hook");
 		freopen("CONOUT$", "w", stdout);
 		freopen("CONOUT$", "w", stderr);
 		freopen("CONIN$", "r", stdin);
 
-		LOG("DLL_PROCESS_ATTACH");
+		VermHook::Logger::Debug("DLL_PROCESS_ATTACH", false, false);
 
 		char buf[200];
 		GetSystemDirectory(buf, 200);
@@ -32,18 +33,19 @@ BOOL WINAPI DllMain(HINSTANCE hInst, DWORD reason, LPVOID)
 
 		if (!hL)
 		{
-			LOG("Could not load DINPUT8.dll in " + string(buf));
+			VermHook::Logger::Warn("DLL_PROCESS_ATTACH");
 			return FALSE;
 		}
 
 		fPtr = GetProcAddress(hL, "DirectInput8Create");
 
 		VermHook::InitHook();
-		BENCHMARK_END("InitHook");
+
+		BENCHMARK_END("InitHook"s);
 	}
 	else if (reason == DLL_PROCESS_DETACH)
 	{
-		LOG("DLL_PROCESS_DETACH");
+		VermHook::Logger::Warn("DLL_PROCESS_ATTACH");
 		VermHook::DestroyHook(); 
 	}
 	
@@ -52,7 +54,7 @@ BOOL WINAPI DllMain(HINSTANCE hInst, DWORD reason, LPVOID)
 
 extern "C" __declspec(dllexport) __declspec(naked) void DirectInput8Create()
 {
-	LOG("dinput8 redirect");
+	LOG_RAW("dinput8 redirect");
 
 	__asm
 	{

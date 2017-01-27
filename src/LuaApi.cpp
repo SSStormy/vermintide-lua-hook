@@ -1,24 +1,43 @@
 #include <Windows.h>
 #include "include/Utils.h"
 #include "include\LuaApi.h"
+#include <sstream>
 
 namespace VermHook
 {
-	int LuaApi::Console::Out(LuaState* state)
+	int LuaApi::Log::Write(LuaState* state)
+	{
+		Logger::Write(HandleConsoleOut(state, "Lua"), false, false);
+		return 0;
+	}
+	int LuaApi::Log::Warn(LuaState* state)
+	{
+		Logger::Warn(HandleConsoleOut(state, "Lua WARNING"), false, false);
+		return 0;
+	}
+	int LuaApi::Log::Debug(LuaState* state)
+	{
+		Logger::Debug(HandleConsoleOut(state, "Lua debug"), false, false);
+		return 0;
+	}
+
+	string LuaApi::Log::HandleConsoleOut(LuaState* state, string prefix)
 	{
 		// Handle vaargs
 		int args = lua_gettop(state);
 		if (args <= 0)
-			return 0;
+			return "null";
 
-		std::cout << ">> Lua:";
+		std::stringstream str;
+
+		str << ">> " << prefix << ":";
 
 		for (int i = 0; i < args; i++)
 		{
 			// for handling a sigsegv on lua_tolstring with index 1 being nil
 			int type = lua_type(state, 1);
 
-			std::cout << " " <<
+			str << " " <<
 				((type != LUA_TNIL)
 					? lua_tolstring(state, 1, NULL)
 					: "nil");
@@ -26,14 +45,12 @@ namespace VermHook
 			lua_remove(state, 1);
 		}
 
-		std::cout << std::endl;
-
-		return 0;
+		return str.str();
 	}
 
-	int LuaApi::Console::Create(LuaState* state)
+	int LuaApi::Log::Create(LuaState* state)
 	{
-		bool result = static_cast<bool>(AllocConsole());
+		bool result = AllocConsole() == TRUE;
 		lua_pushboolean(state, result);
 
 		if (result)
@@ -57,7 +74,7 @@ int argc = lua_gettop(state); \
 	bool dirOnly = false; \
 	luaC_pop(state); \
 	if (argc == 2) { \
-		dirOnly = lua_toboolean(state, 1); \
+		dirOnly =luaC_toboolean(state, 1); \
 		luaC_pop(state); } 
 
 	int LuaApi::Path::GetElements(LuaState* state)

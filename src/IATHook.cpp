@@ -56,14 +56,14 @@ namespace VermHook
 		PDWORD iat_addr = GetIATAddress(fModule, fName);
 		if (iat_addr == nullptr)
 		{
-			LOG("Failed to hook " << fName << ": iat_addr is nullptr");
+			Logger::Warn("Failed to hook " + string(fName) + ": iat_addr is nullptr");
 			return nullptr;
 		}
 
 		DWORD orig_addr = *iat_addr;
 		WriteIATMemory(iat_addr, overrideAddr);
 
-		LOG("Hooked function " << fName);
+		Logger::Debug("Hooked function " + fName);
 		return new IATHook(iat_addr, orig_addr, overrideAddr, fName);
 	}
 
@@ -82,7 +82,7 @@ namespace VermHook
 
 		_isHooked = true;
 		WriteIATMemory(IATAddress, OriginalAddress);
-		LOG("Unhooked");
+		Logger::Debug("Unhooked");
 	}
 }
 
