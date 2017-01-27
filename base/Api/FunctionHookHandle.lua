@@ -23,7 +23,7 @@ local FunctionHookHandle = Api.class("FunctionHookHandle")
     (opt)   (bool isPre)            - whether the function is a prehook (true, default) or posthook (false)
 --]] ---------------------------------------------------------------------------------------
 function FunctionHookHandle:initialize(targetSignature, hookFunction, isPre)
-    assert_e(Api.IsString(script)) 
+    assert_e(Api.IsString(targetSignature)) 
     assert_e(Api.IsFunction(hookFunction))
     
     self._targetSignature = targetSignature    
@@ -67,7 +67,7 @@ FunctionHookHandle.Hooks = { }
         Returns: A FunctionHookHandle class instance.
 --]] ---------------------------------------------------------------------------------------
 FunctionHookHandle.Create = function(targetSignature, hookFunction, isPre, allowDuplicates)
-    local handle = FunctionHookHandleClass(funcSignature, hookFunction, isPre)
+    local handle = Api.FunctionHook(targetSignature, hookFunction, isPre)
     handle:Enable(allowDuplicates)
     return handle
 end
@@ -81,19 +81,21 @@ end
         Returns: The target function or nil if it was not found.
 --]] ---------------------------------------------------------------------------------------
 function FunctionHookHandle:GetTargetFunction(shouldUseCache)
-    if shouldUseCache or true then
+    if shouldUseCache == nil or shouldUseCache then
         if self._targetFunction == nil then 
-            Log.Warn("Tried to force cache GetTargetFunction but cache was null.")
+            Log.Warn("Tried to force cache GetTargetFunction but cache was null.\r\n"..debug.traceback())
             Log.Debug("Function hook handle dump:", Api.json.encode(self))
+            
         end
         
         return self._targetFunction 
     else
-        local ret = Api.pcall(Api.Std.loadstring("return " .. self:GetTargetSignature()))
+        -- TODO : asserted pcall helper function
+        local ret = Api.Std.pcall(Api.Std.loadstring, "return " .. self:GetTargetSignature()) 
         if not ret then
             return nil
         elseif not Api.IsFunction(ret) then
-            Log.Warn("GetTargetFunction eval returns returns a type other then function.")
+            Log.Warn("GetTargetFunction eval returns returns a type other then function:", type(ret))
             Log.Debug("Hook dump:", Api.json.encode(self))
             return nil
         end
@@ -225,8 +227,8 @@ return function(...)
     
     local function callAll(tabl)
         for k,v in ipairs(tabl) do
-            if not pcall( v:GetHookFunction()(...) ) then
-                Log.Warn("Function hook pcall failed.")
+            if not Api.Std.pcall( v:GetHookFunction, ...)  then
+                Log.Warn("Function hook Api.Std.pcall failed.")
                 Log.Debug("Hook data:", Api.json.encode(v))
                 Log.Debug("In hook table:", Api.json.encode(tabl))
             end

@@ -84,9 +84,9 @@ Api.IsTable     = function(obj) return Api.IsType(obj, "table") end
 --]] ---------------------------------------------------------------------------------------
 Api.dofile_e = function(fn, ...)
     -- this doesn't want to cooperate with me when i try to code-golf it 
-    local ret, chunk = pcall(Api.Std.loadfile, fn)
+    local ret, chunk = Api.Std.pcall(Api.Std.loadfile, fn)
     assert_e(ret, chunk)
-    ret, chunk = pcall(chunk, ...)
+    ret, chunk = Api.Std.pcall(chunk, ...)
     assert_e(ret, chunk)
     return chunk
 end
@@ -171,7 +171,7 @@ Api.json = Api.Std.require("mods/base/imports/dkjson")
                                         Classes 
 --]] ---------------------------------------------------------------------------------------
 
-Api.FunctionHookHandle = Api.Std.require("mods/base/Api/FunctionHookHandle")
+Api.FunctionHook = Api.Std.require("mods/base/Api/FunctionHookHandle")
 
 --]] ---------------------------------------------------------------------------------------
 Log.Write("Api bootstrap done.")
