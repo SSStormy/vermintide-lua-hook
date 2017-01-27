@@ -1,7 +1,7 @@
-assert_e(_G.Api == nil)
-assert_e(_G.require)
-assert_e(_G.dofile)
-assert_e(_G.loadfile)
+assert(_G.Api == nil)
+assert(_G.require)
+assert(_G.dofile)
+assert(_G.loadfile)
 
 _G.Api = 
 {
@@ -17,7 +17,7 @@ _G.Api =
         loadstring  = _G.loadstring,
         debug       = _G.debug,
         type        = _G.type,
-        pcall       = _G.pcall
+        pcall       = _G.pcall,
     }
 }
 
@@ -34,25 +34,27 @@ _G.Api =
               When the assertion fails, a message box containing the given message and 
               the stack trace is shown.
               
+              If evaluating multiple expressions at the same time, it's recommended to use assert_mul
+              
         Args: 
             (expr)          - the expression to assert.
     (opt)   (string message)- the message to display upon a failed assertion. Default: "assertion failed!"
         Returns: the value returned by evaluating the expression.
 --]] ---------------------------------------------------------------------------------------
 _G.assert_e = function(expr, message)
-    return Api.Std.assert_e(expr, m .. "\r\n" .. debug.traceback())
+    local msg = message or "assertion failed!"
+    return assert(expr, msg .. "\r\n" .. debug.traceback())
 end
 
 --[[ ---------------------------------------------------------------------------------------
         Name: IsType
         Desc: Check if a given objects built-in type name matches the argument typename string.
         Args: any type object, string expected type name;
-        Returns: 0 = types match; 1 = otherwise.
+        Returns: (bool) true = types match; false = otherwise.
 --]] ---------------------------------------------------------------------------------------
 Api.IsType = function(obj, typename)
     assert_e(type(typename) == "string") -- type checking the type name parameter of a type checking function :ok_hand:
-    if Api.Std.type(obj) ~= typename then return 1 end
-    return 0 
+    return Api.Std.type(obj) == typename
 end
 
 Api.IsString    = function(obj) return Api.IsType(obj, "string") end
@@ -130,7 +132,7 @@ end
                 
 --]] ---------------------------------------------------------------------------------------
 Api.SafeParseJsonFile = function(fileDir)
-    assert_e(Api.IsString(fileDir))
+    local expr = assert_e(Api.IsString(fileDir))
     
     local fileCfg, fopenErr = io.open(fileDir, "r")
     if fileCfg == nil then return fopenErr end
@@ -138,6 +140,7 @@ Api.SafeParseJsonFile = function(fileDir)
     local cfg, pos, jsonErr = Api.json.decode (fileCfg:read("*all"), 1, nil)
     if jsonErr then return "JSON Pos: (" .. tostring(pos) .. ") Error:" .. jsonErr end
     
+    fileCfg:close()
     return cfg
 end
 

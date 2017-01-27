@@ -2,7 +2,7 @@ local AbstractHook= Api.class("AbstractHook")
 local fileHookInfoClass = Api.dofile_e("mods/base/API/FileHookInfo.lua")
 
 function AbstractHook:initialize(objectKey)
-    assert_e(Std.IsString(objectKey))
+    assert_e(Api.IsString(objectKey))
     
     self._preHooks = {nil, { } }
     self._postHooks = { nil, { } }
@@ -16,7 +16,8 @@ AbstractHook.JSON_KEY = "Key"
 AbstractHook.JSON_VALUE = "Value"
 
 function AbstractHook:HandleHook(hookTable, key)
-    assert_e(Std.IsTable(hookTable) and Std.IsString(key))
+    assert_e(Api.IsTable(hookTable))
+    assert_e(Api.IsString(key))
     
 	if hookTable[key] == nil or #hookTable[key] == 0 then return end
 
@@ -27,7 +28,9 @@ function AbstractHook:HandleHook(hookTable, key)
 end
 
 function AbstractHook:_append_hooks(hookTable, jobjTable, modHandle)
-    assert_e(Std.IsTable(hookData) and Std.IsTable(jobjTable) and Std.IsTable(modHandle))
+    assert_e(Api.IsTable(hookData))
+    assert_e(Api.IsTable(jobjTable))
+    assert_e(Api.IsTable(modHandle))
     
     if not jobjTable or #jobjTable == 0 then
         Log.Debug(tostring(self), tostring(jobjTable), "JObject table of mod", modFolder, "is empty or null.")
@@ -63,7 +66,9 @@ function AbstractHook:_append_hooks(hookTable, jobjTable, modHandle)
 end
 
 function AbstractHook:ReadConfig(modHandle, config, modFolder)
-    assert_e(Api.IsTable(modHandle) and Api.IsTable(config) and Api.IsString(modFolder))
+    assert_e(Api.IsTable(modHandle))
+    assert_e(Api.IsTable(config))
+    assert_e(Api.IsString(modFolder))
     
     Log.Debug(tostring(self), "reading config of", modHandle:GetModFolder())
     

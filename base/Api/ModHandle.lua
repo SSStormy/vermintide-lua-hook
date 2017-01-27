@@ -19,11 +19,14 @@ ModHandle.LoadBufferKey = Api._internal.LoadBufferKey
     (opt)   (string website)    - the website of the mod
 --]] ---------------------------------------------------------------------------------------
 function ModHandle:initialize(owner, modFolder, disabledMods, name, version, author, contact, website)
-    assert_e(owner and Api.IsString(modFolder) and Api.IsTable(disabledMods) and Api.IsString(name) and Api.IsString(version))
+    assert_e(owner)
+    assert_e(Api.IsString(modFolder))
+    assert_e(Api.IsTable(disabledMods))
+    assert_e(Api.IsString(name))
+    assert_e(Api.IsString(version))
     
     self._owner = owner
     self._modFolder = modFolder
-    sell._enabled = isEnabled
     self._name = name
     self._verion = version
     self._author = author or "Anonymous" 
@@ -31,8 +34,8 @@ function ModHandle:initialize(owner, modFolder, disabledMods, name, version, aut
     self._website = website or nil
     
     self._hooks = { }
-    self._hooks[RequireKey] = { }    
-    self._hooks[LoadBufferKey] = { }
+    self._hooks[ModHandle.RequireKey] = { }    
+    self._hooks[ModHandle.LoadBufferKey] = { }
     
     self._enabled = disabledMods[self:GetKey()] ~= nil
 end

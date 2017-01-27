@@ -23,7 +23,8 @@ local FunctionHookHandle = Api.class("FunctionHookHandle")
     (opt)   (bool isPre)            - whether the function is a prehook (true, default) or posthook (false)
 --]] ---------------------------------------------------------------------------------------
 function FunctionHookHandle:initialize(targetSignature, hookFunction, isPre)
-    assert_e(Api.IsString(script) and Api.IsFunction(hookFunction) and Api.IsBool(isPre))
+    assert_e(Api.IsString(script)) 
+    assert_e(Api.IsFunction(hookFunction))
     
     self._targetSignature = targetSignature    
     self._isPre = isPre or true
@@ -288,3 +289,4 @@ function FunctionHookHandle:_append_hooks_entry(allowDuplicates)
     return 0
 end
 
+return FunctionHookHandle

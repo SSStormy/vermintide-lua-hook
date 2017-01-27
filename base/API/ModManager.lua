@@ -16,16 +16,59 @@ local KEY_DISABLED = "DisabledMods"
             (AbstractHook ...)  - vaargs of abstract hook, that will be passed to the loader  
 --]] ---------------------------------------------------------------------------------------
 function ModManager:initialize(modDir, configDir, ...)
-    assert_e(Api.IsString(modDir) and Api.IsString(configDir))
+    assert_e(Api.IsString(modDir))
+    assert_e(Api.IsString(configDir))
     assert_e(Path.ElementExists(modDir, true), "modDir " .. modDir .. " doesn't exist in the fs.")
-    
-    self._config, self._cfg_load_result = self:LoadConfig(configDir)
     
     self._mod_dir = modDir
     self._config_dir = configDir
+    
+    self._config, self._cfg_load_result = self.LoadConfig(configDir)
+    
+    if self._cfg_load_result then
+        Log.Warn("Failed loading ModManager config, falling back to default:", self.configDir)
+       
+        if not Path.ElementExists(configDir) then return end
+       
+       -- back up the invalid config file
+        local i = 1;
+        local dir
+        local hFinal = nil
+       
+        hIn= io.open(configDir, "r")
+        cpyData = hIn:read("*a")
+        hIn:close()
+       
+        repeat
+            dir = configDir .. "." .. tostring(i) .. ".bak"
+            i = i + 1
+            
+            -- os.rename told me to fuck off so we're using io
+            if not Path.ElementExists(dir) then
+                hFinal = io.open(dir, "w")
+            end
 
-    self._mod_loader = self_mod_loader_class(...)
-    self._mods, self._moad_load_result = self._mod_loader:LoadModsInDir(self._mod_dir, self._config[KEY_DISABLED])
+       until hFinal ~= nil
+       
+        hFinal:write(cpyData)
+        hFinal:close()
+       
+        Log.Warn("Backed up previous config to", dir)
+       
+        -- setup new file
+        self._config[KEY_DISABLED] = { }
+        self:SaveConfig()
+    end
+    
+    self._mod_loader = self._mod_loader_class(...)
+    self._mods, self._mod_load_result = self._mod_loader:LoadModsInDir(self._mod_dir, self._config[KEY_DISABLED])
+    
+    if self._moad_load_result then
+        Log.Warn("Error in ModManager LoadModsInDir. Dumping error table:")
+        Log.Warn(Api.json.encode(self._moad_load_result))
+    end
+    
+    Log.Debug("Loaded ", tostring(#self._mods), "mods.")
 end
 
 --[[ ---------------------------------------------------------------------------------------
@@ -132,7 +175,11 @@ function ModManager:SaveConfig()
     local fHandle, err = io.open(self:GetConfigDir(), "w+")
     if not fHandle then return err end
     
-    fHandle:write(Api.json.encode(self.GetConfig()))
+    local data = Api.json.encode(self:GetConfig())
+    
+    fHandle:write(data)
+    fHandle:close()
+    return nil
 end
 
 --[[ ---------------------------------------------------------------------------------------
@@ -152,12 +199,12 @@ function ModManager.LoadConfig(configDir)
     if Api.IsString(cfg) then return {}, cfg end
     
     -- [[ verify schema ]] --
-    local function jsonVerifyArray(cfg, key, typecheck)
-        if cfg[key] == nil                      then return "cfg." .. KEY_DISABLED .. " is nil." end
-        if not Api.IsTable(cfg[key])            then return "cfg." .. KEY_DISABLED .. " is not a table." end
+    local function jsonVerifyArray(json, key, typecheck)
+        if json[key] == nil                      then return "json." .. KEY_DISABLED .. " is nil." end
+        if not Api.IsTable(json[key])            then return "json." .. KEY_DISABLED .. " is not a table." end
         
         -- type check elements
-        for i,v in cfg[key] do 
+        for i,v in ipairs(json[key]) do 
             if not typecheck(v) then 
                 return "cfg." .. KEY_DISABLED .. "[" .. tostring(i) .. "]" .. " is not a string." 
             end

@@ -1,4 +1,4 @@
-local ModHandle = Api.class("FileHookInfo")
+local FileHookInfo = Api.class("FileHookInfo")
 
 --[[ ---------------------------------------------------------------------------------------
         Name: initialize
@@ -12,9 +12,12 @@ local ModHandle = Api.class("FileHookInfo")
         
 --]] ---------------------------------------------------------------------------------------
 function FileHookInfo:initialize(key, script, modHandle, scriptExecuteDir, hookHandlerName)
-    assert_e(Api.IsString(key) and Api.IsString(script) and Api.IsString(modHandle) and Api.IsString(scriptExecuteDir) and Api.IsString(hookHandlerName))
-    
-    self._key = key
+    assert_e(Api.IsString(key))
+    assert_e(Api.IsString(script))
+    assert_e(Api.IsString(modHandle))
+    assert_e(Api.IsString(scriptExecuteDir)) 
+    assert_e(Api.IsString(hookHandlerName))
+
     self._script = script
     self._mod_handle = modHandle
     self._script_execute_dir = scriptExecuteDir
@@ -54,3 +57,5 @@ function FileHookInfo:GetScriptExecuteDir() return self._script_execute_dir end
         Returns: (string) name of the hook handler that manages and created this hook.
 --]] ---------------------------------------------------------------------------------------
 function FileHookInfo:GetHookHandlerName() return self._hook_handler_name end
+
+return FileHookInfo

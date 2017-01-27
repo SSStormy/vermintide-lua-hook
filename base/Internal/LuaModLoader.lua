@@ -25,7 +25,8 @@ function LuaModLoader:GetOwner() return self._owner end
         
 --]] ---------------------------------------------------------------------------------------
 function LuaModLoader:LoadModsInDir(directory, disabledMods)
-    assert_e(Api.IsString(directory) and Api.IsString(disabledMods))
+    assert_e(Api.IsString(directory))
+    assert_e(Api.IsTable(disabledMods))
     
     -- dont bother iterating over a folder that doesn't exist
     if not Path.ElementExists(directory, true) then return {} end
@@ -33,7 +34,7 @@ function LuaModLoader:LoadModsInDir(directory, disabledMods)
     local modsLoaded = { }
     local errors = { }
     
-    for _, modDir in ipairs(Path.GetElements(dir)) do
+    for _, modDir in ipairs(Path.GetElements(directory)) do
         local result = self:LoadMod(directory, modDir, disabledMods)
         
         if Api.IsString(result) then
@@ -70,7 +71,11 @@ end
         
 --]] ---------------------------------------------------------------------------------------
 function LuaModLoader:LoadMod(directory, modFolder, disabledMods)
-    assert_e(Api.IsString(directory) and Api.IsString(modFolder) and Api.IsTable(disabledMods))
+    Log.Debug("Loading mod:", directory)
+
+    assert_e(Api.IsString(directory))
+    assert_e(Api.IsString(modFolder))
+    assert_e(Api.IsTable(disabledMods))
     
     if "base" == modFolderDir then return 0 end
     
@@ -96,7 +101,7 @@ function LuaModLoader:LoadMod(directory, modFolder, disabledMods)
     result = verifyStringField(cfg, KEY_CONTACT)    if result then return result end
     result = verifyStringField(cfg, KEY_WEBSITE)    if result then return result end
     
-    local mod = modHandleClass(self:GetOwner(), cfg[KEY_NAME], disabledMods, modFolderDir, cfg[KEY_VERSION], cfg[KEY_AUTHOR], cfg[KEY_CONTACT], cfg[KEY_WEBSITE])
+    local mod = modHandleClass(self:GetOwner(), modFolder, disabledMods, cfg[KEY_NAME], cfg[KEY_VERSION], cfg[KEY_AUTHOR], cfg[KEY_CONTACT], cfg[KEY_WEBSITE])
     
     if mod:IsEnabled() then
         -- iterate over all readers and let them read their part of the config.
@@ -106,7 +111,7 @@ function LuaModLoader:LoadMod(directory, modFolder, disabledMods)
         end
     end
     
-    Log.Debug("Loaded mod:", dir)
+    Log.Debug("Loaded mod:", directory)
     return mod
 end
 
