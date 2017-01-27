@@ -32,6 +32,14 @@ function FunctionHookHandle:initialize(targetSignature, hookFunction, isPre)
         
     self._isActive = false
     self._targetFunction = nil
+    
+    getmetatable(self).__tojson = function(s, state)
+        return "{" .. "\"targetSignature\": \"" .. s:GetTargetSignature() .. "\"," ..
+        "\"isPre\": \"" .. s:IsPreHook() .. "\"," ..
+        "\"hookFunction\": \"" .. tostring(s:GetHookFunction()) .. "\"," ..
+        "\"isActive\": \"" .. tostring(s:IsActive()) .. "\"," ..
+        "\"targetFunction\": \"" .. tostring(s:GetTargetFunction()) .. "\"}"
+    end
 end
 
 --[[ ---------------------------------------------------------------------------------------

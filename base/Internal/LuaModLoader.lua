@@ -1,10 +1,19 @@
 local LuaModLoader = Api.class("LuaModLoader")
-local modHandleClass = Api.dofile_e("mods/base/API/ModHandle.lua")
+local modHandleClass = Api.dofile_e("mods/base/Api/ModHandle.lua")
 
 -- owner: ModManager
 function LuaModLoader:initialize(owner, ...)
-    assert_e(owner)
+    assert_e(Api.IsTable(owner))
     self._owner = owner
+    self._configReaders = {...}
+    
+    local str = ""
+    for _, reader in ipairs(self._configReaders) do
+        str = str .. tostring(reader) .. "; "
+    end
+    
+    Log.Debug("Created LuaModLoader with readers (".. #self._configReaders .. "):", str)
+
 end
 
 function LuaModLoader:GetOwner() return self._owner end
@@ -18,7 +27,8 @@ function LuaModLoader:GetOwner() return self._owner end
             (string disabledMods)   - an indexed table of mod names, whose hooks
                                       shouldn't be loaded.
         Returns: Always:
-                (table) key - ModHandle:GetKey(), value - ModHandle; all loaded mods
+                (table) key - ModHandle:GetKey(), value - ModHandle; all loaded mods or empty table.
+                (int)   amount of mods loaded.
                 (table) key - mod dir string, value - error message; the mod error table:
                         a table of errors encountered while trying to load mods. 
                         Empty if no errors.
@@ -32,26 +42,34 @@ function LuaModLoader:LoadModsInDir(directory, disabledMods)
     if not Path.ElementExists(directory, true) then return {} end
     
     local modsLoaded = { }
+    local modsLoadedCount = 0
     local errors = { }
     
-    for _, modDir in ipairs(Path.GetElements(directory)) do
+    for _, modDir in ipairs(Path.GetElements(directory, true)) do
         local result = self:LoadMod(directory, modDir, disabledMods)
         
-        if Api.IsString(result) then
+        if Api.IsNumber(result) and result == 1 then
+            -- 1 returned when attempting to load 'base', ignore this
+        elseif Api.IsString(result) then
+            Log.Debug("Encountered error while loading mod", modDir, result)
             errors[modDir] = result
         else
             local key = result:GetKey()
+            Log.Debug("Appening key to modsLoaded:", key)
             
             -- check if key already exists
             if modsLoaded[key] == nil then
                 modsLoaded[key] = result
+                modsLoadedCount = modsLoadedCount + 1
             else
-                errors[modDir] = "Duplicate key in loaded mods table: " .. key
+                local errMsg = "Duplicate key in loaded mods table: " .. key
+                Log.Debug(errMsg)
+                errors[modDir] = errMsg
             end
         end
     end
     
-    return modsLoaded, errors
+    return modsLoaded, modsLoadedCount, errors
 end
 
 --[[ ---------------------------------------------------------------------------------------
@@ -71,13 +89,13 @@ end
         
 --]] ---------------------------------------------------------------------------------------
 function LuaModLoader:LoadMod(directory, modFolder, disabledMods)
-    Log.Debug("Loading mod:", directory)
+    Log.Debug("Loading mod:", modFolder)
 
     assert_e(Api.IsString(directory))
     assert_e(Api.IsString(modFolder))
     assert_e(Api.IsTable(disabledMods))
     
-    if "base" == modFolderDir then return 0 end
+    if modFolder == "base" then return 1 end
     
     local cfg = Api.SafeParseJsonFile("./" .. directory .. "/" .. modFolder .. "/" .. "config.json")
     if not Api.IsTable(cfg) then return cfg end
@@ -106,12 +124,15 @@ function LuaModLoader:LoadMod(directory, modFolder, disabledMods)
     if mod:IsEnabled() then
         -- iterate over all readers and let them read their part of the config.
         for _, reader in ipairs(self._configReaders) do
-            local code, err = reader:ReadConfig(mod, cfg, dir)
+            Log.Debug("Current reader:", tostring(reader))
+            local code, err = reader:ReadConfig(mod, cfg, modFolder)
+            Log.Debug("Return values: code:", tostring(code), "err:", tostring(err))
             if code ~= 0 then return err end
         end
     end
     
-    Log.Debug("Loaded mod:", directory)
+    Log.Write("Loaded mod:", modFolder)
+    Log.Debug("Dump:", Api.json.encode(mod))
     return mod
 end
 

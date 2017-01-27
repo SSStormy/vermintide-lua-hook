@@ -7,13 +7,11 @@ end
 
 -- called by cpp
 function LoadBufferHooks:_notify_pre(name)
-    assert_e(Api.IsString(name))
     self:HandleHook(self._preHooks, name)
 end
 
 -- called by cpp
 function LoadBufferHooks:_notify_post(name)
-    assert_e(Api.IsString(name))
     self:HandleHook(self._postHooks, name)
 end
 

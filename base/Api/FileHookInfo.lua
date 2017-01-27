@@ -6,7 +6,7 @@ local FileHookInfo = Api.class("FileHookInfo")
         Args: 
             (string key)                = the key (LoadBuffer name, or require module etc)
             (string script)             = directory, relative to the mod directory, to the script
-            (string modHandle)          = a handle of the mod which owns this hook.
+            (table  modHandle)          = a handle of the mod which owns this hook.
             (string scriptExecuteDir)   = directory, relative to the game exe, pointing to the script
             (string hookHandlerName)    = name of the hook handler that manages and created this hook.
         
@@ -14,14 +14,23 @@ local FileHookInfo = Api.class("FileHookInfo")
 function FileHookInfo:initialize(key, script, modHandle, scriptExecuteDir, hookHandlerName)
     assert_e(Api.IsString(key))
     assert_e(Api.IsString(script))
-    assert_e(Api.IsString(modHandle))
+    assert_e(Api.IsTable(modHandle))
     assert_e(Api.IsString(scriptExecuteDir)) 
     assert_e(Api.IsString(hookHandlerName))
 
+    self._key = key
     self._script = script
     self._mod_handle = modHandle
     self._script_execute_dir = scriptExecuteDir
     self._hook_handler_name = hookHandlerName
+    
+    getmetatable(self).__tojson = function(s, state)
+        return "{" .. "\"key\": \"" .. tostring(s:GetKey()) .. "\"," ..
+        "\"script\": \"" .. tostring(s:GetScript()) .. "\"," ..
+        "\"scriptExecuteDir\": \"" .. tostring(s:GetScriptExecuteDir()) .. "\"," ..
+        "\"hookHandlerName\": \"" .. tostring(s:GetHookHandlerName()) .. "\"," ..        
+        "\"modHandle_key\": \"" .. tostring(s:GetModHandle():GetKey()) .. "\"}"
+    end
 end
 
 --[[ ---------------------------------------------------------------------------------------

@@ -31,19 +31,29 @@ _G.Api =
         Desc: Asserts an expression. The assertion succeeds if the expression returns a
               non-falsy (not nil && not false) value.
               
-              When the assertion fails, a message box containing the given message and 
-              the stack trace is shown.
-              
-              If evaluating multiple expressions at the same time, it's recommended to use assert_mul
+              When the assertion fails, a message box containing the given message and
+              the stack trace, the message + stack trace are written to Log.Warn()
               
         Args: 
             (expr)          - the expression to assert.
-    (opt)   (string message)- the message to display upon a failed assertion. Default: "assertion failed!"
+    (opt)   (string message)- the message to display upon a failed assertion. Default: "assertion failed!".
+                              Illegal types set the value to default.
+                              
         Returns: the value returned by evaluating the expression.
 --]] ---------------------------------------------------------------------------------------
 _G.assert_e = function(expr, message)
-    local msg = message or "assertion failed!"
-    return assert(expr, msg .. "\r\n" .. debug.traceback())
+    if expr then return expr end
+        
+    local msg = message
+
+    if type(msg) ~= "string" then
+        msg = "assertion failed!" 
+    end
+    
+    msg = msg .. "\r\n" .. debug.traceback()
+    
+    Log.Warn(msg) 
+    return assert(expr, msg)
 end
 
 --[[ ---------------------------------------------------------------------------------------
@@ -66,13 +76,19 @@ Api.IsTable     = function(obj) return Api.IsType(obj, "table") end
 --[[ ---------------------------------------------------------------------------------------
         Name: dofile_e
         Desc: An extension to the standard dofile method that exposes vaargs which will be
-                packed and exposed to the given script as "..."
+                packed and exposed to the given script as "...", as well was perform
+                loadfile and execution error checking via assert_e..
         Args: any type variadic
-        Returns: see loadfile()
+        Returns: whatever value the executed file returns.
         
 --]] ---------------------------------------------------------------------------------------
-Api.dofile_e = function(fn, ...) 
-    return assert_e(Api.Std.loadfile(fn))({...}) 
+Api.dofile_e = function(fn, ...)
+    -- this doesn't want to cooperate with me when i try to code-golf it 
+    local ret, chunk = pcall(Api.Std.loadfile, fn)
+    assert_e(ret, chunk)
+    ret, chunk = pcall(chunk, ...)
+    assert_e(ret, chunk)
+    return chunk
 end
 
 --[[ ---------------------------------------------------------------------------------------

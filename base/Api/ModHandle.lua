@@ -28,16 +28,25 @@ function ModHandle:initialize(owner, modFolder, disabledMods, name, version, aut
     self._owner = owner
     self._modFolder = modFolder
     self._name = name
-    self._verion = version
+    self._version = version
     self._author = author or "Anonymous" 
     self._contact = contact or nil
     self._website = website or nil
     
     self._hooks = { }
-    self._hooks[ModHandle.RequireKey] = { }    
-    self._hooks[ModHandle.LoadBufferKey] = { }
+    self._enabled = disabledMods[self:GetKey()] == nil
     
-    self._enabled = disabledMods[self:GetKey()] ~= nil
+    getmetatable(self).__tojson = function(s, state)
+        return "{ \"owner\":\"" .. tostring(s:GetOwner()) .. "\","..
+        "\"modFolder\":\"" .. tostring(s:GetModFolder()) .. "\","..
+        "\"name\":\"" .. tostring(s:GetName()) .. "\","..
+        "\"verion\":\"" .. tostring(s:GetVersion()) .. "\","..
+        "\"author\":\"" .. tostring(s:GetAuthor()) .. "\","..
+        "\"contact\":\"" .. tostring(s:GetContact()) .. "\","..
+        "\"website\":\"" .. tostring(s:GetWebsite()) .. "\","..
+        "\"enabled\":\"" .. tostring(s:IsEnabled()) .. "\","..
+        "\"hooks\":" .. Api.json.encode(s._hooks) .. "}"
+    end
 end
 
 --[[ ---------------------------------------------------------------------------------------

@@ -1,5 +1,5 @@
 local AbstractHook= Api.class("AbstractHook")
-local fileHookInfoClass = Api.dofile_e("mods/base/API/FileHookInfo.lua")
+local fileHookInfoClass = Api.dofile_e("mods/base/Api/FileHookInfo.lua")
 
 function AbstractHook:initialize(objectKey)
     assert_e(Api.IsString(objectKey))
@@ -16,21 +16,21 @@ AbstractHook.JSON_KEY = "Key"
 AbstractHook.JSON_VALUE = "Value"
 
 function AbstractHook:HandleHook(hookTable, key)
-    assert_e(Api.IsTable(hookTable))
-    assert_e(Api.IsString(key))
+    -- i'd assert the params but this is going to be called thousands of times per second when booting so i'd rather save some load time.
     
 	if hookTable[key] == nil or #hookTable[key] == 0 then return end
 
 	for _, hookData in ipairs(hookTable[key]) do
         Log.Debug("Handling hook:", Api.json.encode(hookData))
-        Api.dofile_e(hookData.ScriptExecuteDir, hookData)
+        Api.dofile_e(hookData:GetScriptExecuteDir(), hookData)
 	end
 end
 
 function AbstractHook:_append_hooks(hookTable, jobjTable, modHandle)
-    assert_e(Api.IsTable(hookData))
-    assert_e(Api.IsTable(jobjTable))
+    assert_e(Api.IsTable(hookTable))
+    assert_e(not jobjTable or Api.IsTable(jobjTable))
     assert_e(Api.IsTable(modHandle))
+    Log.Debug("Appending hooks for:", tostring(hookTable))
     
     if not jobjTable or #jobjTable == 0 then
         Log.Debug(tostring(self), tostring(jobjTable), "JObject table of mod", modFolder, "is empty or null.")
@@ -49,28 +49,29 @@ function AbstractHook:_append_hooks(hookTable, jobjTable, modHandle)
             return 1, "AbstractHook: json key: " .. self.JSON_VALUE .. " null object"
         end
         
-        -- be extra sure the hookTable contains a 'requireString' k-v pair
+        local hookData = fileHookInfoClass(key, value, modHandle, "./mods/" .. modHandle:GetModFolder() .. "/" .. value, tostring(self))
+        
+        -- make sure tables have values
+        local modHookTable = modHandle:GetHooks()
+        modHookTable[self._objectKey] = modHookTable[self._objectKey] or {}
 		hookTable[key] = hookTable[key] or { }
         
-        local hookData = fileHookInfoClass(key, value, modHandle, "./mods/" .. modFolder .. "/" .. value, self.name)
-        
         -- insert hook into the mod handle's hook table
-        table.insert(modHandle.GetHooks()[self.objectKey], hookData)
+        table.insert(modHookTable[self._objectKey], hookData)
         
         -- insert hook data into the indexed table hookTable[requireString]
 		table.insert(hookTable[key], hookData)
         
         Log.Debug("Loaded hookData:", Api.json.encode(hookData))
-        Log.Write("AbstractHook:", key, value)
 	end
+    
+    return 0
 end
 
 function AbstractHook:ReadConfig(modHandle, config, modFolder)
     assert_e(Api.IsTable(modHandle))
     assert_e(Api.IsTable(config))
     assert_e(Api.IsString(modFolder))
-    
-    Log.Debug(tostring(self), "reading config of", modHandle:GetModFolder())
     
     -- check for malforms
     local obj = config[self._objectKey]

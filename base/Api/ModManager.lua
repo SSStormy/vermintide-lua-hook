@@ -23,7 +23,9 @@ function ModManager:initialize(modDir, configDir, ...)
     self._mod_dir = modDir
     self._config_dir = configDir
     
-    self._config, self._cfg_load_result = self.LoadConfig(configDir)
+    self._config, 
+        self._mods_loaded,
+        self._cfg_load_result = self.LoadConfig(configDir)
     
     if self._cfg_load_result then
         Log.Warn("Failed loading ModManager config, falling back to default:", self.configDir)
@@ -60,7 +62,7 @@ function ModManager:initialize(modDir, configDir, ...)
         self:SaveConfig()
     end
     
-    self._mod_loader = self._mod_loader_class(...)
+    self._mod_loader = self._mod_loader_class(self, ...)
     self._mods, self._mod_load_result = self._mod_loader:LoadModsInDir(self._mod_dir, self._config[KEY_DISABLED])
     
     if self._moad_load_result then
@@ -68,7 +70,7 @@ function ModManager:initialize(modDir, configDir, ...)
         Log.Warn(Api.json.encode(self._moad_load_result))
     end
     
-    Log.Debug("Loaded ", tostring(#self._mods), "mods.")
+    Log.Debug("Loaded", tostring(self:GetModCount()), "mods.")
 end
 
 --[[ ---------------------------------------------------------------------------------------
@@ -78,6 +80,12 @@ end
                   LuaModLoader:LoadModsInDir
 --]] ---------------------------------------------------------------------------------------
 function ModManager:GetMods() return self._mods end
+
+--[[ ---------------------------------------------------------------------------------------
+        Name: GetModCount
+        Returns: (int) returns the amount of mods in the GetMods() table.
+--]] ---------------------------------------------------------------------------------------
+function ModManager:GetModCount() return self._mods_loaded end
 
 --[[ ---------------------------------------------------------------------------------------
         Name: GetLoadModsError
@@ -93,10 +101,10 @@ function ModManager:GetLoadModsError() return self._moad_load_result end
 function ModManager:GetLoadConfigError() return self._cfg_load_result end
 
 --[[ ---------------------------------------------------------------------------------------
-        Name: GetModDir
+        Name: GetRootModDir
         Returns: (string) The folder of mods this mod manager loads from.
 --]] ---------------------------------------------------------------------------------------
-function ModManager:GetModDir() return self._mod_dir end
+function ModManager:GetRootModDir() return self._mod_dir end
     
 --[[ ---------------------------------------------------------------------------------------
         Name: GetConfigDir
