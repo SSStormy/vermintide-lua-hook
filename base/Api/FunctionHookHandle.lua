@@ -154,13 +154,12 @@ end
 --]] ---------------------------------------------------------------------------------------
 function FunctionHookHandle:Disable()
     if not self:IsActive() then return end
-    local original = assert_e(Api.IsFunction(self:GetTargetFunction()))
     local sign = self:GetTargetSignature()
-    
-    -- assign the original function back to it's signature
-    Api.std.loadstring(sign .. "=...")(original)
-    local entry = assert_e(Api.IsTable(FunctionHookHandle.Hooks[sign]))
-   
+
+    Log.Debug("Disabling a hook handle for signature", sign)
+
+    local entry = FunctionHookHandle.Hooks[sign]
+
     -- figure out which table we should be removing the hook from
     local tabl
     if self:IsPreHook() then
@@ -171,19 +170,27 @@ function FunctionHookHandle:Disable()
     assert_e(Api.IsTable(tabl))
     
     -- remove our FunctionHookHandle from the hook table.
-    local index = tabl:get_index(self)
+    local index = table.get_index(tabl, self)
     if index == nil then return end
-    
     table.remove(tabl, index)
     
-    -- check if the entry now hold two empty tables. remove if so
+     
+     -- check if the entry now hold two empty tables.
     if #entry.PreHooks <= 0 and #entry.PostHooks <= 0 then
+        
+        -- remove the hook entry
         Log.Debug("Removed now empty hook entry for signature", sign)
         FunctionHookHandle.Hooks[sign] = nil
+
+        -- assign the original function back to it's signature
+        Api.Std.loadstring(sign .. "=...")(self:GetTargetFunction())
+        Log.Debug("Reassigned original function to signature", sign)
     end
-    
+  
     self._isActive = false
 end
+
+
 
 --[[ ---------------------------------------------------------------------------------------
         Name: Enable
@@ -216,7 +223,7 @@ function FunctionHookHandle:Enable(allowDuplicates)
     
     -- add ourselves to the new, or to the existing hook entry.
     if self:_append_hooks_entry(allowDuplicates or false) ~= 0 then
-        self:Disable()
+        return -- handled inline
     end
 end
 
@@ -304,12 +311,8 @@ function FunctionHookHandle:_append_hooks_entry(allowDuplicates)
     
     -- check for dupes
     if not allowDuplicates then 
-        
         for _, hook in ipairs(tabl) do
-            
-            -- TODO : hook:GetTargetFunction() == self:GetTargetFunction() won't work since one of them will point to an overrider function in case of duplicates
-            if hook:GetTargetFunction() == self:GetTargetFunction() and hook:GetHookFunction() == self:GetHookFunction() then
-                
+            if hook:GetHookFunction() == self:GetHookFunction() then
                 Log.Warn("Duplicate hooks found in table at", tostring(tabl))
                 Log.Debug("Tables: PreHook:", tostring(entry.PreHooks), "PostHook:", tostring(entry.PostHook))
                 Log.Debug("Our hook dump:", Api.json.encode(self))
@@ -317,6 +320,7 @@ function FunctionHookHandle:_append_hooks_entry(allowDuplicates)
                 return 1
             end
         end
+        
     end
         
     table.insert(tabl, self)

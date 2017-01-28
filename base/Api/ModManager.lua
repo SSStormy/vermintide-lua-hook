@@ -63,7 +63,7 @@ function ModManager:initialize(modDir, configDir, ...)
     end
     
     self._mod_loader = self._mod_loader_class(self, ...)
-    self._mods, self._mod_load_result = self._mod_loader:LoadModsInDir(self._mod_dir, self._config[KEY_DISABLED])
+    self._mods, self._mods_loaded, self._mod_load_result = self._mod_loader:LoadModsInDir(self._mod_dir, self._config[KEY_DISABLED])
     
     if self._moad_load_result then
         Log.Warn("Error in ModManager LoadModsInDir. Dumping error table:")

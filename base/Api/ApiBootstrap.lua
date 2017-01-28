@@ -127,7 +127,7 @@ end
 --]] ---------------------------------------------------------------------------------------
 _G.table.get_index = table.get_index or function(tab, val)
     assert_e(Api.IsTable(tab))
-    for i, val in ipairs(tab) do
+    for i, value in ipairs(tab) do
         if value == val then
             return i
         end
