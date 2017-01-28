@@ -34,8 +34,8 @@ function FunctionHookHandle:initialize(targetSignature, hookFunction, isPre)
     self._targetFunction = nil
     
     getmetatable(self).__tojson = function(s, state)
-        return "{" .. "\"targetSignature\": \"" .. s:GetTargetSignature() .. "\"," ..
-        "\"isPre\": \"" .. s:IsPreHook() .. "\"," ..
+        return "{" .. "\"targetSignature\": \"" .. tostring(s:GetTargetSignature()) .. "\"," ..
+        "\"isPre\": \"" .. tostring(s:IsPreHook()) .. "\"," ..
         "\"hookFunction\": \"" .. tostring(s:GetHookFunction()) .. "\"," ..
         "\"isActive\": \"" .. tostring(s:IsActive()) .. "\"," ..
         "\"targetFunction\": \"" .. tostring(s:GetTargetFunction()) .. "\"}"
@@ -69,6 +69,13 @@ FunctionHookHandle.Hooks = { }
 FunctionHookHandle.Create = function(targetSignature, hookFunction, isPre, allowDuplicates)
     local handle = Api.FunctionHook(targetSignature, hookFunction, isPre)
     handle:Enable(allowDuplicates)
+    
+    -- do some tests
+    local entry = FunctionHookHandle.Hooks[targetSignature]
+    assert_e(entry)
+    Log.Debug(targetSignature, "Pre hooks:", Api.json.encode(entry.PreHooks))
+    Log.Debug(targetSignature, "Post hooks:", Api.json.encode(entry.PostHooks))
+    
     return handle
 end
 
@@ -76,32 +83,31 @@ end
 --[[ ---------------------------------------------------------------------------------------
         Name: GetTargetFunction
         Desc: Gets and returns the hook handler's target function.
-        Args: (optional )bool - true to use cache (set during FunctionHookHandle:Enable()) (default), 
+        Args: (optional) bool - true to use cache (set during FunctionHookHandle:Enable()) (default), 
                      false to eval a new reference.
         Returns: The target function or nil if it was not found.
 --]] ---------------------------------------------------------------------------------------
 function FunctionHookHandle:GetTargetFunction(shouldUseCache)
+    
     if shouldUseCache == nil or shouldUseCache then
+        
         if self._targetFunction == nil then 
             Log.Warn("Tried to force cache GetTargetFunction but cache was null.\r\n"..debug.traceback())
             Log.Debug("Function hook handle dump:", Api.json.encode(self))
-            
         end
         
         return self._targetFunction 
-    else
-        -- TODO : asserted pcall helper function
-        local ret = Api.Std.pcall(Api.Std.loadstring, "return " .. self:GetTargetSignature()) 
-        if not ret then
-            return nil
-        elseif not Api.IsFunction(ret) then
-            Log.Warn("GetTargetFunction eval returns returns a type other then function:", type(ret))
-            Log.Debug("Hook dump:", Api.json.encode(self))
-            return nil
-        end
-        
-        return ret
     end
+    
+    local func = Api.Std.loadstring("return " .. self:GetTargetSignature())()
+    
+    if not Api.IsFunction(func) then
+        Log.Warn("GetTargetFunction eval returns returns a type other then function:", type(func))
+        Log.Debug("Hook dump:", Api.json.encode(self))
+        return nil
+    end
+    
+    return func
 end
 
 --[[ ---------------------------------------------------------------------------------------
@@ -166,12 +172,8 @@ function FunctionHookHandle:Disable()
     
     -- remove our FunctionHookHandle from the hook table.
     local index = tabl:get_index(self)
-    if index == nil then
-        Log.Warn("Tried to disable funcion handle hook that is not registered in the hook table.");
-        Log.Debug("FunctionHookHandle dump:", Api.json.encode(self))
-        Log.Debug("Hook table dump:", Api.json.encode(FunctionHookHandle.Hooks))
-        return 
-    end
+    if index == nil then return end
+    
     table.remove(tabl, index)
     
     -- check if the entry now hold two empty tables. remove if so
@@ -210,25 +212,24 @@ function FunctionHookHandle:Enable(allowDuplicates)
         self:_create_hooks_entry()
     end
     
+    self._isActive = true
+    
     -- add ourselves to the new, or to the existing hook entry.
     if self:_append_hooks_entry(allowDuplicates or false) ~= 0 then
-        return -- it's handled inline
+        self:Disable()
     end
-    
-    -- we're active now.
-    self._isActive = true
 end
 
 local targetOverrider =  [[
-local signature = ...
-
-return function(...) 
-    local entry = FunctionHookHandle.Hooks[signature]
+local f = function(...)
+    local entry = Api.FunctionHook.Hooks[signature]
     
-    local function callAll(tabl)
+    local function callAll(tabl, ...)
         for k,v in ipairs(tabl) do
-            if not Api.Std.pcall( v:GetHookFunction, ...)  then
-                Log.Warn("Function hook Api.Std.pcall failed.")
+            Log.Debug("Handling callAll for fhook value:", tostring(v))
+            local status, ret = Api.Std.pcall(v:GetHookFunction(), ...)
+            if not status then
+                Log.Warn("Function hook Api.Std.pcall failed, error:", tostring(ret))
                 Log.Debug("Hook data:", Api.json.encode(v))
                 Log.Debug("In hook table:", Api.json.encode(tabl))
             end
@@ -240,10 +241,19 @@ return function(...)
         return nil
     end
     
-    callAll(entry.PreHooks)
-    entry.Original(...)
-    callAll(entry.PostHooks)
+    Log.Debug("Handling pre", signature)
+    callAll(entry.PreHooks, ...)
+    
+    Log.Debug("Calling original", signature)
+    local retvals = {entry.Original(...)}
+    
+    Log.Debug("Handling post", signature)
+    callAll(entry.PostHooks, ...)
+    
+    return unpack(retvals)
 end
+
+return f
 ]]
 
 function FunctionHookHandle:_create_hooks_entry()
@@ -260,18 +270,29 @@ function FunctionHookHandle:_create_hooks_entry()
         PostHooks = { }
     }
     
+    
     -- [[ overwrite original method with new one. ]] --
     
     -- Instantiate the targetOverrider function and capture the target signature
-    local customFunc = Api.Std.loadstring(targetOverrider)(sign)
+    local overriderChunk, err1 = Api.Std.loadstring("local signature = \"" .. sign .. "\"\r\n" .. targetOverrider)
+    assert_e(overriderChunk, "Target overrider loadstring evaluated to a nil chunk: " .. tostring(err1))
+    
+    local customFunc, err2 = overriderChunk(sign)
+    assert_e(Api.IsFunction(customFunc), "Overrider function isn't a function: " .. type(customFunc) .. " err: " .. tostring(err2))
+     
     -- Assign the customFunc onto the target signature. 
     -- ... is substituted for customFunc
-    Api.Std.loadstring(sign .. "= ...")(customFunc) 
+    Api.Std.loadstring(sign .. "= ...")(customFunc)
+    
+    Log.Debug("Created new hooks entry for signature:", sign)
 end
 
 function FunctionHookHandle:_append_hooks_entry(allowDuplicates)
-    local entry = FunctionHookHandle.Hooks[self:GetTargetSignature()]
+    local sign = self:GetTargetSignature()
+    local entry = FunctionHookHandle.Hooks[sign]
+    
     assert_e(entry)
+    Log.Debug("Appending hooks entry of signature:", sign)
     
     local tabl = nil
     
@@ -281,10 +302,12 @@ function FunctionHookHandle:_append_hooks_entry(allowDuplicates)
         tabl = entry.PostHooks
     end
     
+    -- check for dupes
     if not allowDuplicates then 
         
         for _, hook in ipairs(tabl) do
             
+            -- TODO : hook:GetTargetFunction() == self:GetTargetFunction() won't work since one of them will point to an overrider function in case of duplicates
             if hook:GetTargetFunction() == self:GetTargetFunction() and hook:GetHookFunction() == self:GetHookFunction() then
                 
                 Log.Warn("Duplicate hooks found in table at", tostring(tabl))
@@ -295,7 +318,8 @@ function FunctionHookHandle:_append_hooks_entry(allowDuplicates)
             end
         end
     end
-    
+        
+    table.insert(tabl, self)
     return 0
 end
 

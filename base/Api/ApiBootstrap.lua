@@ -39,10 +39,10 @@ _G.Api =
     (opt)   (string message)- the message to display upon a failed assertion. Default: "assertion failed!".
                               Illegal types set the value to default.
                               
-        Returns: the value returned by evaluating the expression.
+        Returns: the value returned by evaluating the expression (and the message if expr is true)
 --]] ---------------------------------------------------------------------------------------
 _G.assert_e = function(expr, message)
-    if expr then return expr end
+    if expr then return expr, message end
         
     local msg = message
 
