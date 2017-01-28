@@ -23,7 +23,7 @@ local FunctionHookHandle = Api.class("FunctionHookHandle")
     (opt)   (bool isPre)            - whether the function is a prehook (true, default) or posthook (false)
 --]] ---------------------------------------------------------------------------------------
 function FunctionHookHandle:initialize(targetSignature, hookFunction, isPre)
-    assert_e(Api.IsString(script)) 
+    assert_e(Api.IsString(targetSignature)) 
     assert_e(Api.IsFunction(hookFunction))
     
     self._targetSignature = targetSignature    
@@ -34,8 +34,8 @@ function FunctionHookHandle:initialize(targetSignature, hookFunction, isPre)
     self._targetFunction = nil
     
     getmetatable(self).__tojson = function(s, state)
-        return "{" .. "\"targetSignature\": \"" .. s:GetTargetSignature() .. "\"," ..
-        "\"isPre\": \"" .. s:IsPreHook() .. "\"," ..
+        return "{" .. "\"targetSignature\": \"" .. tostring(s:GetTargetSignature()) .. "\"," ..
+        "\"isPre\": \"" .. tostring(s:IsPreHook()) .. "\"," ..
         "\"hookFunction\": \"" .. tostring(s:GetHookFunction()) .. "\"," ..
         "\"isActive\": \"" .. tostring(s:IsActive()) .. "\"," ..
         "\"targetFunction\": \"" .. tostring(s:GetTargetFunction()) .. "\"}"
@@ -67,8 +67,15 @@ FunctionHookHandle.Hooks = { }
         Returns: A FunctionHookHandle class instance.
 --]] ---------------------------------------------------------------------------------------
 FunctionHookHandle.Create = function(targetSignature, hookFunction, isPre, allowDuplicates)
-    local handle = FunctionHookHandleClass(funcSignature, hookFunction, isPre)
+    local handle = Api.FunctionHook(targetSignature, hookFunction, isPre)
     handle:Enable(allowDuplicates)
+    
+    -- do some tests
+    local entry = FunctionHookHandle.Hooks[targetSignature]
+    assert_e(entry)
+    Log.Debug(targetSignature, "Pre hooks:", Api.json.encode(entry.PreHooks))
+    Log.Debug(targetSignature, "Post hooks:", Api.json.encode(entry.PostHooks))
+    
     return handle
 end
 
@@ -76,30 +83,31 @@ end
 --[[ ---------------------------------------------------------------------------------------
         Name: GetTargetFunction
         Desc: Gets and returns the hook handler's target function.
-        Args: (optional )bool - true to use cache (set during FunctionHookHandle:Enable()) (default), 
+        Args: (optional) bool - true to use cache (set during FunctionHookHandle:Enable()) (default), 
                      false to eval a new reference.
         Returns: The target function or nil if it was not found.
 --]] ---------------------------------------------------------------------------------------
 function FunctionHookHandle:GetTargetFunction(shouldUseCache)
-    if shouldUseCache or true then
+    
+    if shouldUseCache == nil or shouldUseCache then
+        
         if self._targetFunction == nil then 
-            Log.Warn("Tried to force cache GetTargetFunction but cache was null.")
+            Log.Warn("Tried to force cache GetTargetFunction but cache was null.\r\n"..debug.traceback())
             Log.Debug("Function hook handle dump:", Api.json.encode(self))
         end
         
         return self._targetFunction 
-    else
-        local ret = Api.pcall(Api.Std.loadstring("return " .. self:GetTargetSignature()))
-        if not ret then
-            return nil
-        elseif not Api.IsFunction(ret) then
-            Log.Warn("GetTargetFunction eval returns returns a type other then function.")
-            Log.Debug("Hook dump:", Api.json.encode(self))
-            return nil
-        end
-        
-        return ret
     end
+    
+    local func = Api.Std.loadstring("return " .. self:GetTargetSignature())()
+    
+    if not Api.IsFunction(func) then
+        Log.Warn("GetTargetFunction eval returns returns a type other then function:", type(func))
+        Log.Debug("Hook dump:", Api.json.encode(self))
+        return nil
+    end
+    
+    return func
 end
 
 --[[ ---------------------------------------------------------------------------------------
@@ -146,13 +154,12 @@ end
 --]] ---------------------------------------------------------------------------------------
 function FunctionHookHandle:Disable()
     if not self:IsActive() then return end
-    local original = assert_e(Api.IsFunction(self:GetTargetFunction()))
     local sign = self:GetTargetSignature()
-    
-    -- assign the original function back to it's signature
-    Api.std.loadstring(sign .. "=...")(original)
-    local entry = assert_e(Api.IsTable(FunctionHookHandle.Hooks[sign]))
-   
+
+    Log.Debug("Disabling a hook handle for signature", sign)
+
+    local entry = FunctionHookHandle.Hooks[sign]
+
     -- figure out which table we should be removing the hook from
     local tabl
     if self:IsPreHook() then
@@ -163,23 +170,27 @@ function FunctionHookHandle:Disable()
     assert_e(Api.IsTable(tabl))
     
     -- remove our FunctionHookHandle from the hook table.
-    local index = tabl:get_index(self)
-    if index == nil then
-        Log.Warn("Tried to disable funcion handle hook that is not registered in the hook table.");
-        Log.Debug("FunctionHookHandle dump:", Api.json.encode(self))
-        Log.Debug("Hook table dump:", Api.json.encode(FunctionHookHandle.Hooks))
-        return 
-    end
+    local index = table.get_index(tabl, self)
+    if index == nil then return end
     table.remove(tabl, index)
     
-    -- check if the entry now hold two empty tables. remove if so
+     
+     -- check if the entry now hold two empty tables.
     if #entry.PreHooks <= 0 and #entry.PostHooks <= 0 then
+        
+        -- remove the hook entry
         Log.Debug("Removed now empty hook entry for signature", sign)
         FunctionHookHandle.Hooks[sign] = nil
+
+        -- assign the original function back to it's signature
+        Api.Std.loadstring(sign .. "=...")(self:GetTargetFunction())
+        Log.Debug("Reassigned original function to signature", sign)
     end
-    
+  
     self._isActive = false
 end
+
+
 
 --[[ ---------------------------------------------------------------------------------------
         Name: Enable
@@ -208,25 +219,24 @@ function FunctionHookHandle:Enable(allowDuplicates)
         self:_create_hooks_entry()
     end
     
+    self._isActive = true
+    
     -- add ourselves to the new, or to the existing hook entry.
     if self:_append_hooks_entry(allowDuplicates or false) ~= 0 then
-        return -- it's handled inline
+        return -- handled inline
     end
-    
-    -- we're active now.
-    self._isActive = true
 end
 
 local targetOverrider =  [[
-local signature = ...
-
-return function(...) 
-    local entry = FunctionHookHandle.Hooks[signature]
+local f = function(...)
+    local entry = Api.FunctionHook.Hooks[signature]
     
-    local function callAll(tabl)
+    local function callAll(tabl, ...)
         for k,v in ipairs(tabl) do
-            if not pcall( v:GetHookFunction()(...) ) then
-                Log.Warn("Function hook pcall failed.")
+            Log.Debug("Handling callAll for fhook value:", tostring(v))
+            local status, ret = Api.Std.pcall(v:GetHookFunction(), ...)
+            if not status then
+                Log.Warn("Function hook Api.Std.pcall failed, error:", tostring(ret))
                 Log.Debug("Hook data:", Api.json.encode(v))
                 Log.Debug("In hook table:", Api.json.encode(tabl))
             end
@@ -238,10 +248,19 @@ return function(...)
         return nil
     end
     
-    callAll(entry.PreHooks)
-    entry.Original(...)
-    callAll(entry.PostHooks)
+    Log.Debug("Handling pre", signature)
+    callAll(entry.PreHooks, ...)
+    
+    Log.Debug("Calling original", signature)
+    local retvals = {entry.Original(...)}
+    
+    Log.Debug("Handling post", signature)
+    callAll(entry.PostHooks, ...)
+    
+    return unpack(retvals)
 end
+
+return f
 ]]
 
 function FunctionHookHandle:_create_hooks_entry()
@@ -258,18 +277,29 @@ function FunctionHookHandle:_create_hooks_entry()
         PostHooks = { }
     }
     
+    
     -- [[ overwrite original method with new one. ]] --
     
     -- Instantiate the targetOverrider function and capture the target signature
-    local customFunc = Api.Std.loadstring(targetOverrider)(sign)
+    local overriderChunk, err1 = Api.Std.loadstring("local signature = \"" .. sign .. "\"\r\n" .. targetOverrider)
+    assert_e(overriderChunk, "Target overrider loadstring evaluated to a nil chunk: " .. tostring(err1))
+    
+    local customFunc, err2 = overriderChunk(sign)
+    assert_e(Api.IsFunction(customFunc), "Overrider function isn't a function: " .. type(customFunc) .. " err: " .. tostring(err2))
+     
     -- Assign the customFunc onto the target signature. 
     -- ... is substituted for customFunc
-    Api.Std.loadstring(sign .. "= ...")(customFunc) 
+    Api.Std.loadstring(sign .. "= ...")(customFunc)
+    
+    Log.Debug("Created new hooks entry for signature:", sign)
 end
 
 function FunctionHookHandle:_append_hooks_entry(allowDuplicates)
-    local entry = FunctionHookHandle.Hooks[self:GetTargetSignature()]
+    local sign = self:GetTargetSignature()
+    local entry = FunctionHookHandle.Hooks[sign]
+    
     assert_e(entry)
+    Log.Debug("Appending hooks entry of signature:", sign)
     
     local tabl = nil
     
@@ -279,12 +309,10 @@ function FunctionHookHandle:_append_hooks_entry(allowDuplicates)
         tabl = entry.PostHooks
     end
     
+    -- check for dupes
     if not allowDuplicates then 
-        
         for _, hook in ipairs(tabl) do
-            
-            if hook:GetTargetFunction() == self:GetTargetFunction() and hook:GetHookFunction() == self:GetHookFunction() then
-                
+            if hook:GetHookFunction() == self:GetHookFunction() then
                 Log.Warn("Duplicate hooks found in table at", tostring(tabl))
                 Log.Debug("Tables: PreHook:", tostring(entry.PreHooks), "PostHook:", tostring(entry.PostHook))
                 Log.Debug("Our hook dump:", Api.json.encode(self))
@@ -292,8 +320,10 @@ function FunctionHookHandle:_append_hooks_entry(allowDuplicates)
                 return 1
             end
         end
+        
     end
-    
+        
+    table.insert(tabl, self)
     return 0
 end
 

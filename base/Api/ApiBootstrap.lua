@@ -39,10 +39,10 @@ _G.Api =
     (opt)   (string message)- the message to display upon a failed assertion. Default: "assertion failed!".
                               Illegal types set the value to default.
                               
-        Returns: the value returned by evaluating the expression.
+        Returns: the value returned by evaluating the expression (and the message if expr is true)
 --]] ---------------------------------------------------------------------------------------
 _G.assert_e = function(expr, message)
-    if expr then return expr end
+    if expr then return expr, message end
         
     local msg = message
 
@@ -84,9 +84,9 @@ Api.IsTable     = function(obj) return Api.IsType(obj, "table") end
 --]] ---------------------------------------------------------------------------------------
 Api.dofile_e = function(fn, ...)
     -- this doesn't want to cooperate with me when i try to code-golf it 
-    local ret, chunk = pcall(Api.Std.loadfile, fn)
+    local ret, chunk = Api.Std.pcall(Api.Std.loadfile, fn)
     assert_e(ret, chunk)
-    ret, chunk = pcall(chunk, ...)
+    ret, chunk = Api.Std.pcall(chunk, ...)
     assert_e(ret, chunk)
     return chunk
 end
@@ -127,7 +127,7 @@ end
 --]] ---------------------------------------------------------------------------------------
 _G.table.get_index = table.get_index or function(tab, val)
     assert_e(Api.IsTable(tab))
-    for i, val in ipairs(tab) do
+    for i, value in ipairs(tab) do
         if value == val then
             return i
         end
@@ -171,7 +171,7 @@ Api.json = Api.Std.require("mods/base/imports/dkjson")
                                         Classes 
 --]] ---------------------------------------------------------------------------------------
 
-Api.FunctionHookHandle = Api.Std.require("mods/base/Api/FunctionHookHandle")
+Api.FunctionHook = Api.Std.require("mods/base/Api/FunctionHookHandle")
 
 --]] ---------------------------------------------------------------------------------------
 Log.Write("Api bootstrap done.")
