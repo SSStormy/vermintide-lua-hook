@@ -113,6 +113,16 @@ _G.table.has_value = table.has_value or function(tab, val)
 end
 
 --[[ ---------------------------------------------------------------------------------------
+        Name: length
+        Returns: (int) the amount of hash-key valued entries in the table.
+--]] ---------------------------------------------------------------------------------------
+_G.table.length = _G.table.length or function(tab)
+    local count = 0
+    for _ in pairs(tab) do count = count + 1 end
+    return count
+end
+
+--[[ ---------------------------------------------------------------------------------------
         Name: get_index
         Desc: Tries to find the index of the first appearance of the given value in the
               given table.

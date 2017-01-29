@@ -351,7 +351,7 @@ encode2 = function (value, indent, level, buffer, buflen, tables, globalorder, s
         return exception ('unsupported type', value, state, buffer, buflen,
         "type '" .. valtype .. "' is not supported by JSON.")
     else
-        Log.Debug("Skipped function while encoding JSON:", tostring(valtype), tostring(value), tostring(state), tostring(buffer), tostring(buflen))
+        print("Skipped function while encoding JSON:", tostring(valtype), tostring(value), tostring(state), tostring(buffer), tostring(buflen))
     end
   end
   return buflen
