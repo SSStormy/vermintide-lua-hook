@@ -24,7 +24,6 @@ function ModManager:initialize(modDir, configDir, ...)
     self._config_dir = configDir
     
     self._config, 
-        self._mods_loaded,
         self._cfg_load_result = self.LoadConfig(configDir)
     
     if self._cfg_load_result then
@@ -91,7 +90,7 @@ function ModManager:GetModCount() return self._mods_loaded end
         Name: GetLoadModsError
         Returns: (table) Returns the error table returned by LoadModsInDir.
 --]] ---------------------------------------------------------------------------------------
-function ModManager:GetLoadModsError() return self._moad_load_result end
+function ModManager:GetLoadModsError() return self._mod_load_result end
     
 --[[ ---------------------------------------------------------------------------------------
         Name: GetLoadConfigError
