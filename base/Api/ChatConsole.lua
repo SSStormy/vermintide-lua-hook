@@ -1,66 +1,151 @@
-local function TokenizeInput(input)
-    local QUOTE_TOKEN = "\""
+local ChatConsole = Api.class("ChatConsole")
+local CommandPrefix = ";"
 
-    local function isWhiteSpace(char) 
-        return char == ' ' or char == '\r' or char == '\n' or char == '\t'
-    end
+function ChatConsole:initialize()
+    self._commands = { } -- key: command string; value: callback
+    self._isHijacked = false
+end
+
+--[[ ---------------------------------------------------------------------------------------
+        Name: SendMessage
+        Desc: The original send message function.
+        Args:
+            (table self)        - a reference to Managers.chat
+            (integer channel)   - internally, always called with 1. Other details unknown.
+            (string message)    - the message to send to other clients.
+--]] ---------------------------------------------------------------------------------------
+ChatConsole.SendMessage = function(...) Log.Warn("Tried to call unhijacked ChatConsole.SendMessage.", debug.traceback())  end
+
+--[[ ---------------------------------------------------------------------------------------
+        Name: SendLocalChat
+        Desc: Sends a chat message to our client.
+        Args: 
+            (string message)    - the message to display
+            (string isDev)      - sets the sender color to orange for true and blue for false.
+                                  Requires the sender arg to be set.
+            (string isSystem)   - whether to use a sender or not to.
+    (opt)   (string sender)     - the sender.
+--]] ---------------------------------------------------------------------------------------
+function ChatConsole.SendLocalChat(message, isDev, isSystem, sender)
+    assert_e(Api.IsString(message))
     
-    local lexData = 
+    local msg_tables = global_chat_gui.chat_output_widget.content.message_tables
+    
+    local msg = 
     {
-        original = input,
-        stream = { },
-        pos = 1,
-        
-        matchRawChar= function(self, expected)
-            return stream[pos] == expected
-        end,
-        
-        matchChar = function(self, expected)
-            local privatePos = pos
-            while isWhiteSpace(stream[privatePos]) do
-                privatePos = privatePos + 1
-            end
-            return stream[privatePos] == expected
-        end,
-        
-        consumeRawChar= function(self)
-            self.pos = self.pos + 1
-            return self.stream[self.pos - 1]
-        end,
-        
-        consumeChar = function(self)
-            local c
-            repeat c = self:consumeRawChar() until not isWhiteSpace(c)
-            return c
-        end
+        is_dev = isDev,
+        is_system = isSystem,
+        message = message,
+        sender = sender
     }
-    message:gsub(".", function(c) table.insert(lexData.stream,c) end)
     
-    local function matchStatement(data)
-        local STATEMENT_TOKEN = ";"
-        local c = data:consumeChar()
-        if c ~= STATEMENT_TOKEN then error("Couldn't match statement token. Expected: " .. STATEMENT_TOKEN .. " found: " .. tostring(c)) end
+    table.insert(msg_tables, msg)
+end
+
+local function detour(message)
+    if message:sub(1,1) ~= CommandPrefix then return true end
+    
+    local status, result = Api.ChatConsole:HandleChatInput(message:sub(2))
+    
+    if result == nil then Log.Debug("command result is nil.") return false end
+    
+    local callbackMsg
+    if not status then 
+        Log.Debug("Error: " .. tostring(result)) 
+        callbackMsg = "Error: " .. tostring(result)
+    else
+        Log.Debug(tostring(result))
+        callbackMsg = tostring(result)
     end
     
-    local function tokenizeQuote(data)
+    ChatConsole.SendLocalChat(callbackMsg, true, false, "LUA: ")
+    
+    return false
+end
+
+function ChatConsole:HijackChat()
+    if self._isHijacked then return end
+    self._isHijacked = true
+    
+    self.SendMessage = Managers.chat.send_chat_message
+    assert_e(Api.IsFunction(Managers.chat.send_chat_message))
+    assert_e(Api.IsFunction(self.SendMessage))
+    
+    Managers.chat.send_chat_message = function(self, channel, message, ...)
+        local status, result = Api.logged_pcall(detour, message)
         
+        if not status or result then Api.ChatConsole.SendMessage(Managers.chat, channel, message, ...) end
     end
+    
+    Log.Debug("ChatConsole: hijacked chat")
+end
 
-    local function tokenizeId(data)
-        local c = data:nextChar()
-        if c == QUOTE_TOKEN then return tokenizeQuote(data) end
-        local id = c
+--[[ ---------------------------------------------------------------------------------------
+        Name: RegisterCommand
+        Desc: Attempts to register a chat command.
+        Args: 
+            (string command)        - the command trigger
+            (function callback)     - the the callback of the command. 
+                                      Signature: 
+                                        (string command) - same as the command arg
+                                        (string input)   - everything past command
+                                      If return value is not null, it will be locally displayed
+                                      in chat.
+--]] ---------------------------------------------------------------------------------------
+function ChatConsole:RegisterCommand(command, callback)
+    assert_e(Api.IsString(command))
+    assert_e(Api.IsFunction(callback))
+    
+    if self._commands[command] ~= nil then return false end
+        
+    self._commands[command] = callback
+end
+
+--[[ ---------------------------------------------------------------------------------------
+        Name: GetCommand
+        Args:
+            (string command)    - the command trigger.
+        Return: nil or the callback of the given command.
+--]] ---------------------------------------------------------------------------------------
+function ChatConsole:GetCommnand(command)
+    assert_e(Api.IsString(command))
+    return self._commands[command]
+end
+
+ --[[ ---------------------------------------------------------------------------------------
+        Name: UnregisterCommand
+        Args:
+            (string command)    - the command trigger.
+--]] ---------------------------------------------------------------------------------------
+function ChatConsole:UnregisterCommand(command)
+    assert_e(Api.IsString(command))
+    self._commands[command] = nil
+end
+
+function ChatConsole:HandleChatInput(input)
+    local spaceIndex = input:find(" ")
+    
+    local cmdKey
+    local args
+    
+    if spaceIndex == nil then
+        cmdKey = input
+        args = nil
+    else
+        cmdKey= input:sub(1, spaceIndex-1)
+        args = input:sub(spaceIndex+1)
     end
+    
+    Log.Debug("Cmd:", "\"" .. tostring(cmdKey) .. "\"", "Args:", "\"" .. tostring(args) .. "\"")
+    
+    if cmdKey == nil then return false, "No command specified." end
+    local cmd = self._commands[cmdKey]
+    if cmd == nil then return false, "Command not found." end
+        
+    local status, result = pcall(cmd, cmdKey, args)
+    if not status then return false, "Command failed: " .. tostring(result) end
+    
+    return true, result
 end
 
-local function ParseTokens(tokens)
-    
-end
-
-local function SubmitInput(input)
-    
-end
-
-function RegisterCommand(command, callback)
-    
-end
+return ChatConsole

@@ -1,5 +1,5 @@
 local LuaModLoader = Api.class("LuaModLoader")
-local modHandleClass = Api.dofile_e("mods/base/Api/ModHandle.lua")
+local modHandleClass = Api.Std.require("mods/base/Api/ModHandle")
 
 -- owner: ModManager
 function LuaModLoader:initialize(owner, ...)
