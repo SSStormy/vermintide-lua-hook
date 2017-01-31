@@ -170,6 +170,14 @@ Api.SafeParseJsonFile = function(fileDir)
     return cfg
 end
 
+Api.logged_pcall = function(func, ...)
+    local status, result = pcall(func, ...)
+    if not status then Log.Warn("Logged pcall failed!:", tostring(result), debug.traceback()) end
+        
+    return status, result
+end
+
+
 --[[ ---------------------------------------------------------------------------------------
                                     Imported libraries 
 --]] ---------------------------------------------------------------------------------------
@@ -182,6 +190,20 @@ Api.json = Api.Std.require("mods/base/imports/dkjson")
 --]] ---------------------------------------------------------------------------------------
 
 Api.FunctionHook = Api.Std.require("mods/base/Api/FunctionHookHandle")
+Api.ChatConsole = Api.Std.require("mods/base/Api/ChatConsole")()
+
+--[[ ---------------------------------------------------------------------------------------
+                                        Chat commands 
+--]] ---------------------------------------------------------------------------------------
+
+-- clear console
+Api.ChatConsole:RegisterCommand("clear", function(...) global_chat_gui:create_ui_elements() end)
+
+-- evaluate script
+Api.ChatConsole:RegisterCommand("e", function(cmd, input) return Api.Std.loadstring(input)() end)
+
+-- execute script file
+Api.ChatConsole:RegisterCommand("f", function(cmd, input) return Api.Std.loadfile("mods/file/" .. input .. ".lua")() end)
 
 --]] ---------------------------------------------------------------------------------------
 Log.Write("Api bootstrap done.")

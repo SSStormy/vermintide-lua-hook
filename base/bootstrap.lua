@@ -1,5 +1,5 @@
 if false then
-    console.create()
+    Log.Create()
 end
 
 require("mods/base/Api/ApiBootstrap")

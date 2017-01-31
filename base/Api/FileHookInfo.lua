@@ -5,29 +5,39 @@ local FileHookInfo = Api.class("FileHookInfo")
         Desc: Creates an new immutable FileHookInfo class instance.
         Args: 
             (string key)                = the key (LoadBuffer name, or require module etc)
-            (string script)             = directory, relative to the mod directory, to the script
+            (string file)               = directory, relative to the mod directory, to a file script that will be executed
+            (string chunkString)        = a string chunk of lua code that will be executed.
             (table  modHandle)          = a handle of the mod which owns this hook.
-            (string scriptExecuteDir)   = directory, relative to the game exe, pointing to the script
             (string hookHandlerName)    = name of the hook handler that manages and created this hook.
         
 --]] ---------------------------------------------------------------------------------------
-function FileHookInfo:initialize(key, script, modHandle, scriptExecuteDir, hookHandlerName)
+function FileHookInfo:initialize(key, file, chunkString, modHandle, hookHandlerName)
     assert_e(Api.IsString(key))
-    assert_e(Api.IsString(script))
+    assert_e(Api.IsString(chunkString) or Api.IsString(file))
     assert_e(Api.IsTable(modHandle))
-    assert_e(Api.IsString(scriptExecuteDir)) 
     assert_e(Api.IsString(hookHandlerName))
 
     self._key = key
-    self._script = script
+    self._file = file
     self._mod_handle = modHandle
-    self._script_execute_dir = scriptExecuteDir
     self._hook_handler_name = hookHandlerName
+
+    if file then
+        self._file_execute_dir = "./mods/" .. modHandle:GetModFolder() .. "/" .. file
+    else
+        self._file_execute_dir = nil
+    end
+    
+    if chunkString then
+        local _, chunk = assert_e(pcall(Api.Std.loadstring, chunkString))
+        self._chunk = chunk
+    end
     
     getmetatable(self).__tojson = function(s, state)
         return "{" .. "\"key\": \"" .. tostring(s:GetKey()) .. "\"," ..
-        "\"script\": \"" .. tostring(s:GetScript()) .. "\"," ..
-        "\"scriptExecuteDir\": \"" .. tostring(s:GetScriptExecuteDir()) .. "\"," ..
+        "\"file\": \"" .. tostring(s:GetFile()) .. "\"," ..
+        "\"chunk\": \"" .. tostring(s:GetChunk()) .. "\"," ..
+        "\"scriptExecuteDir\": \"" .. tostring(s:GetFileExecuteDir()) .. "\"," ..
         "\"hookHandlerName\": \"" .. tostring(s:GetHookHandlerName()) .. "\"," ..        
         "\"modHandle_key\": \"" .. tostring(s:GetModHandle():GetKey()) .. "\"}"
     end
@@ -41,11 +51,16 @@ function FileHookInfo:GetKey() return self._key end
     
     
 --[[ ---------------------------------------------------------------------------------------
-        Name:GetScript
+        Name:GetFile
         Returns: (string) directory, relative to the mod directory, to the hooked script
 --]] ---------------------------------------------------------------------------------------
-function FileHookInfo:GetScript() return self._script end
+function FileHookInfo:GetFile() return self._file end
     
+--[[ ---------------------------------------------------------------------------------------
+        Name: GetChunk
+        Returns: (string) the lua chunk to be executed.
+--]] ---------------------------------------------------------------------------------------
+function FileHookInfo:GetChunk() return self._chunk end
     
 --[[ ---------------------------------------------------------------------------------------
         Name: GetModHandle
@@ -55,11 +70,10 @@ function FileHookInfo:GetModHandle() return self._mod_handle end
 
 
 --[[ ---------------------------------------------------------------------------------------
-        Name: GetScriptExecuteDir
-        Returns: (string) directory, relative to the game exe, pointing to the script
+        Name: GetFileExecuteDir
+        Returns: (string) directory, relative to the game exe, pointing to the file.
 --]] ---------------------------------------------------------------------------------------
-function FileHookInfo:GetScriptExecuteDir() return self._script_execute_dir end
-
+function FileHookInfo:GetFileExecuteDir() return self._file_execute_dir end
 
 --[[ ---------------------------------------------------------------------------------------
         Name: GetHookHandlerName
