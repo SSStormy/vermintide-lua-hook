@@ -1,8 +1,49 @@
+local CLexer = Api.class("CLexer")
+
+function CLexer:initialize(input)
+    self._stream = { }
+    input:gsub(".", function(s) table.insert(self._stream, s) end)
+    self._input = input
+    self._pos = 1
+end
+
+function CLexer:IsWhitespace(char)
+    return char == " " or char == "\n" or char == "\t" or char == "\r"
+end
+
+function CLexer:Lookahead()
+    return self._stream[self._pos]
+end
+
+function CLexer:HandleWord()
+    local buffer = ""
+    
+    repeat
+        buffer = buffer .. self:Lookahead()
+        self:Consume()
+    until self:IsWhitespace(self:Lookahead()) or self:Lookahead() == nil
+    
+    return { Pos = self._pos, Data = buffer}
+end
+
+function CLexer:Consume()
+    self._pos = self._pos + 1
+end
+    
+function CLexer:NextToken()
+    while self:Lookahead() ~= nil do
+        if self:IsWhitespace(self:Lookahead()) then self:Consume()
+        else return self:HandleWord() end
+    end
+    
+    return nil
+end
+
 local ChatConsole = Api.class("ChatConsole")
 local CommandPrefix = ";"
 
 function ChatConsole:initialize()
-    self._commands = { } -- key: command string; value: callback
+    self._commands = { } -- key: command string; value: ConsoleCommand
     self._isHijacked = false
 end
 
@@ -83,29 +124,29 @@ end
 --[[ ---------------------------------------------------------------------------------------
         Name: RegisterCommand
         Desc: Attempts to register a chat command.
-        Args: 
-            (string command)        - the command trigger
-            (function callback)     - the the callback of the command. 
-                                      Signature: 
-                                        (string command) - same as the command arg
-                                        (string input)   - everything past command
-                                      If return value is not null, it will be locally displayed
-                                      in chat.
+        Args: (ConsoleCommand command) the command to register.
+        Returns: (bool) true, when registered successfully, otherwise, false.
 --]] ---------------------------------------------------------------------------------------
-function ChatConsole:RegisterCommand(command, callback)
-    assert_e(Api.IsString(command))
-    assert_e(Api.IsFunction(callback))
+function ChatConsole:RegisterCommand(command)
+    assert_e(Api.IsTable(command))
+    assert_e(Api.IsString(command:GetTrigger()))
+
+    Log.Debug("Registering command:", Api.json.encode(command))
+    if self._commands[command:GetTrigger()] ~= nil then 
+        Log.Debug("Failed registering command.")
+        return false 
+    end
     
-    if self._commands[command] ~= nil then return false end
-        
-    self._commands[command] = callback
+    self._commands[command:GetTrigger()] = command
+    Log.Debug("Registered")
+    return true
 end
 
 --[[ ---------------------------------------------------------------------------------------
         Name: GetCommand
         Args:
             (string command)    - the command trigger.
-        Return: nil or the callback of the given command.
+        Return: nil or the ConsoleCommand table of the given command.
 --]] ---------------------------------------------------------------------------------------
 function ChatConsole:GetCommnand(command)
     assert_e(Api.IsString(command))
@@ -120,31 +161,39 @@ end
 function ChatConsole:UnregisterCommand(command)
     assert_e(Api.IsString(command))
     self._commands[command] = nil
+    Log.Debug("Unregistering command:", command)
 end
 
 function ChatConsole:HandleChatInput(input)
-    local spaceIndex = input:find(" ")
+    local lexer = CLexer(input)
+    local token = lexer:NextToken()
+    local cmdKey = ""
+    local status, err= nil
     
-    local cmdKey
-    local args
-    
-    if spaceIndex == nil then
-        cmdKey = input
-        args = nil
-    else
-        cmdKey= input:sub(1, spaceIndex-1)
-        args = input:sub(spaceIndex+1)
+    -- iterate over each token, appending the current one to the last and testing for a command with that key
+    while token ~= nil do
+        
+        cmdKey = cmdKey .. token.Data
+        
+        status, err = self:TryCommand(cmdKey, input:sub(token.Pos))
+        if status then return true, err end
+        
+        cmdKey = cmdKey .. " "
+        token = lexer:NextToken()
     end
     
+    return false, err
+end
+
+function ChatConsole:TryCommand(cmdKey, args)
     Log.Debug("Cmd:", "\"" .. tostring(cmdKey) .. "\"", "Args:", "\"" .. tostring(args) .. "\"")
     
     if cmdKey == nil then return false, "No command specified." end
     local cmd = self._commands[cmdKey]
     if cmd == nil then return false, "Command not found." end
         
-    local status, result = pcall(cmd, cmdKey, args)
-    if not status then return false, "Command failed: " .. tostring(result) end
-    
+    local status, result = pcall(cmd:GetCallback(), cmdKey, args)
+    if not status then return true, "Command failed: " .. tostring(result) end
     return true, result
 end
 

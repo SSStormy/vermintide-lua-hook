@@ -67,7 +67,7 @@ FunctionHookHandle.Hooks = { }
         Returns: A FunctionHookHandle class instance.
 --]] ---------------------------------------------------------------------------------------
 FunctionHookHandle.Create = function(targetSignature, hookFunction, isPre, allowDuplicates)
-    local handle = Api.FunctionHook(targetSignature, hookFunction, isPre)
+    local handle = Api.FunctionHookClass(targetSignature, hookFunction, isPre)
     handle:Enable(allowDuplicates)
     
     -- do some tests
@@ -229,7 +229,7 @@ end
 
 local targetOverrider =  [[
 local f = function(...)
-    local entry = Api.FunctionHook.Hooks[signature]
+    local entry = Api.FunctionHookClass.Hooks[signature]
     
     local function callAll(tabl, ...)
         for k,v in ipairs(tabl) do

@@ -179,31 +179,19 @@ end
 
 
 --[[ ---------------------------------------------------------------------------------------
-                                    Imported libraries 
+                            Imported libraries/class instances
 --]] ---------------------------------------------------------------------------------------
 
 Api.class = Api.Std.require("mods/base/imports/middleclass")
 Api.json = Api.Std.require("mods/base/imports/dkjson")
+Api.ChatConsole = Api.Std.require("mods/base/Api/ChatConsole")()
 
 --[[ ---------------------------------------------------------------------------------------
                                         Classes 
 --]] ---------------------------------------------------------------------------------------
 
-Api.FunctionHook = Api.Std.require("mods/base/Api/FunctionHookHandle")
-Api.ChatConsole = Api.Std.require("mods/base/Api/ChatConsole")()
-
---[[ ---------------------------------------------------------------------------------------
-                                        Chat commands 
---]] ---------------------------------------------------------------------------------------
-
--- clear console
-Api.ChatConsole:RegisterCommand("clear", function(...) global_chat_gui:create_ui_elements() end)
-
--- evaluate script
-Api.ChatConsole:RegisterCommand("e", function(cmd, input) return Api.Std.loadstring(input)() end)
-
--- execute script file
-Api.ChatConsole:RegisterCommand("f", function(cmd, input) return Api.Std.loadfile("mods/file/" .. input .. ".lua")() end)
+Api.FunctionHookClass = Api.Std.require("mods/base/Api/FunctionHookHandle")
+Api.ConsoleCommandClass = Api.Std.require("mods/base/Api/ConsoleCommand")
 
 --]] ---------------------------------------------------------------------------------------
 Log.Write("Api bootstrap done.")

@@ -1,3 +1,7 @@
+--[[ ---------------------------------------------------------------------------------------
+                                            Mod API
+--]] ---------------------------------------------------------------------------------------
+
 local requireHook = Api.dofile_e("mods/base/internal/hooks/RequireHooks.lua")()
 local loadBufferHook = Api.dofile_e("mods/base/internal/hooks/LoadBufferHooks.lua")()
 
@@ -13,6 +17,9 @@ assert(Api.ModManager)
 _G.LoadBufferHook = loadBufferHook
 requireHook:Inject()
 
+--[[ ---------------------------------------------------------------------------------------
+                                        Chat console init
+--]] ---------------------------------------------------------------------------------------
 
 loadBufferHook:AddHook("@scripts/game_state/state_ingame.lua", nil, 
     [[
@@ -21,4 +28,21 @@ loadBufferHook:AddHook("@scripts/game_state/state_ingame.lua", nil,
     
 loadBufferHook:AddHook("@scripts/ui/hud_ui/team_member_unit_frame_ui_definitions.lua", "Internal/PostPlay.lua", nil, baseMod, false)
     
+    
+--[[ ---------------------------------------------------------------------------------------
+                                        Chat commands 
+--]] ---------------------------------------------------------------------------------------
+
+-- clear console
+assert(Api.ChatConsole:RegisterCommand(Api.ConsoleCommandClass("clear", "Clears the chat.", baseMod, 
+            function(...) global_chat_gui:create_ui_elements() end)))
+
+-- evaluate script
+assert(Api.ChatConsole:RegisterCommand(Api.ConsoleCommandClass("e", "Evaluates lua input.", baseMod, 
+            function(cmd, input) return Api.Std.loadstring(input)() end)))
+
+-- execute script file
+assert(Api.ChatConsole:RegisterCommand(Api.ConsoleCommandClass("f", "Executes lua file in mods/file/__INPUT__.lua", baseMod, 
+            function(cmd, input) return Api.Std.loadfile("mods/file/" .. input .. ".lua")() end)))
+
 Log.Write("Main.lua is done.") 
