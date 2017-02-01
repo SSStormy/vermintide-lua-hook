@@ -39,10 +39,18 @@ assert(Api.ChatConsole:RegisterCommand(Api.ConsoleCommandClass("clear", "Clears 
 
 -- evaluate script
 assert(Api.ChatConsole:RegisterCommand(Api.ConsoleCommandClass("e", "Evaluates lua input.", baseMod, 
-            function(cmd, input) return Api.Std.loadstring(input)() end)))
+            function(cmd, input) 
+                local chunk, err = Api.Std.loadstring(input)
+                if chunk == nil then return err end
+                return chunk()
+            end)))
 
 -- execute script file
 assert(Api.ChatConsole:RegisterCommand(Api.ConsoleCommandClass("f", "Executes lua file in mods/file/__INPUT__.lua", baseMod, 
-            function(cmd, input) return Api.Std.loadfile("mods/file/" .. input .. ".lua")() end)))
+            function(cmd, input) 
+                local chunk, err = Api.Std.loadfile("mods/file/" .. input .. ".lua")
+                if chunk == nil then return error end
+                return chunk() 
+            end)))
 
 Log.Write("Main.lua is done.") 

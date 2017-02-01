@@ -18,6 +18,10 @@ _G.Api =
         debug       = _G.debug,
         type        = _G.type,
         pcall       = _G.pcall,
+        string = 
+        {
+            dump = _G.string.dump
+        }
     }
 }
 

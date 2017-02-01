@@ -175,7 +175,7 @@ function ChatConsole:HandleChatInput(input)
         
         cmdKey = cmdKey .. token.Data
         
-        status, err = self:TryCommand(cmdKey, input:sub(token.Pos))
+        status, err = self:TryCommand(cmdKey, input:sub(token.Pos):match'^%s*(.*%S)' or '')
         if status then return true, err end
         
         cmdKey = cmdKey .. " "
