@@ -24,12 +24,12 @@ namespace VermHook
 	void ModLoaderRoutine::CallLoadBufferNotifier(LuaState* state, const char* methodName, const char* bufName)
 	{
 		// push the target function onto the stack
-		lua_getglobal(state, "LoadBufferHook");
+		lua_getglobal(state, "__loadBufferHook");
 		lua_pushstring(state, methodName);
 		lua_gettable(state, -2);
 
 		// push args (self, name)
-		lua_getglobal(state, "LoadBufferHook");
+		lua_getglobal(state, "__loadBufferHook");
 		lua_pushstring(state, bufName);
 		lua_call(state, 2, 0);
 

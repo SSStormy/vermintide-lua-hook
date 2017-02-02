@@ -2,19 +2,19 @@
                                             Mod API
 --]] ---------------------------------------------------------------------------------------
 
-local requireHook = Api.dofile_e("mods/base/internal/hooks/RequireHooks.lua")()
-local loadBufferHook = Api.dofile_e("mods/base/internal/hooks/LoadBufferHooks.lua")()
+Api.RequireHook = Api.dofile_e("mods/base/internal/hooks/RequireHooks.lua")()
+Api.LoadBufferHook = Api.dofile_e("mods/base/internal/hooks/LoadBufferHooks.lua")()
 
-assert(requireHook)
-assert(loadBufferHook)
+assert(Api.RequireHook)
+assert(Api.LoadBufferHook)
 
-Api.ModManager = Api.dofile_e("mods/base/Api/ModManager.lua")("mods/", "mods/modmanager.json", requireHook, loadBufferHook)
+Api.ModManager = Api.dofile_e("mods/base/Api/ModManager.lua")("mods/", "mods/modmanager.json", Api.RequireHook, Api.LoadBufferHook)
 local baseMod = Api.Std.require("mods/base/Api/ModHandle")("base", "base", {}, "base", "v1.0.0", "ssstormy", nil, nil)
 
 assert(baseMod)
 assert(Api.ModManager)
 
-_G.LoadBufferHook = loadBufferHook
+_G.__loadBufferHook = loadBufferHook
 requireHook:Inject()
 
 --[[ ---------------------------------------------------------------------------------------
