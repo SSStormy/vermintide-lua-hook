@@ -25,7 +25,11 @@ namespace VermHook
             if(dwAttrib != INVALID_FILE_ATTRIBUTES)
             {
 				if (mustBeFolder)
-					return (dwAttrib & FILE_ATTRIBUTE_DIRECTORY) != 0;
+				{
+					auto val = (dwAttrib & FILE_ATTRIBUTE_DIRECTORY) != 0;
+					Logger::Debug(string(szPath) + " " + std::to_string(val)); // release refuses to pass c tests without this????
+					return val;
+				}
                 return true;
             }
             return false;

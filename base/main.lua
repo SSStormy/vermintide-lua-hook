@@ -14,19 +14,19 @@ local baseMod = Api.Std.require("mods/base/Api/ModHandle")("base", "base", {}, "
 assert(baseMod)
 assert(Api.ModManager)
 
-_G.__loadBufferHook = loadBufferHook
-requireHook:Inject()
+_G.__loadBufferHook = Api.LoadBufferHook
+Api.RequireHook:Inject()
 
 --[[ ---------------------------------------------------------------------------------------
                                         Chat console init
 --]] ---------------------------------------------------------------------------------------
 
-loadBufferHook:AddHook("@scripts/game_state/state_ingame.lua", nil, 
+Api.LoadBufferHook:AddHook("@scripts/game_state/state_ingame.lua", nil, 
     [[
         Api.ChatConsole:HijackChat()
     ]], baseMod, false)
     
-loadBufferHook:AddHook("@scripts/ui/hud_ui/team_member_unit_frame_ui_definitions.lua", "Internal/PostPlay.lua", nil, baseMod, false)
+Api.LoadBufferHook:AddHook("@scripts/ui/hud_ui/team_member_unit_frame_ui_definitions.lua", "Internal/PostPlay.lua", nil, baseMod, false)
     
     
 --[[ ---------------------------------------------------------------------------------------
