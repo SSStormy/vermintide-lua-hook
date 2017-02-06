@@ -23,7 +23,7 @@ BOOL WINAPI DllMain(HINSTANCE hInst, DWORD reason, LPVOID)
 		freopen("CONOUT$", "w", stderr);
 		freopen("CONIN$", "r", stdin);
 
-		VermHook::Logger::Debug("DLL_PROCESS_ATTACH", false, false);
+		VermHook::LOG_D("DLL_PROCESS_ATTACH", false, false);
 
 		char buf[200];
 		GetSystemDirectory(buf, 200);
@@ -33,15 +33,21 @@ BOOL WINAPI DllMain(HINSTANCE hInst, DWORD reason, LPVOID)
 
 		if (!hL)
 		{
-			VermHook::Logger::Warn("DLL_PROCESS_ATTACH");
+			VermHook::LOG_W("Could not load the DINPUT8.dll library.");
 			return FALSE;
 		}
 
 		fPtr = GetProcAddress(hL, "DirectInput8Create");
 
+		if (fPtr == nullptr)
+		{
+			VermHook::LOG_W("Could not find DirectInput8Create in the DINPUT8.dll library.");
+			return FALSE;
+		}
+
 		VermHook::InitHook();
 
-		BENCHMARK_END("InitHook"s);
+		VermHook::BENCHMARK_END("InitHook"s);
 	}
 	else if (reason == DLL_PROCESS_DETACH)
 	{

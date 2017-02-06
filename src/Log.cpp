@@ -4,17 +4,17 @@ namespace VermHook
 {
 	static std::ofstream _out(Globals::LogFileName);
 
-	void Logger::Warn(string msg, const char* line, const char* filename)
+	void Logger::Warn(string msg, const char* filename, int line)
 	{
 		_write("  [WARNING] ... ", msg, line, filename);
 	}
 
-	void Logger::Debug(string msg, const char* line, const char* filename)
+	void Logger::Debug(string msg, const char* filename, int line)
 	{
 		_write("    [DEBUG] ... ", msg, line, filename);
 	}
 
-	void Logger::Write(string msg, const char* line, const char* filename)
+	void Logger::Write(string msg, const char* filename, int line)
 	{
 		_write("            ... ", msg, line, filename);
 	}
@@ -31,7 +31,7 @@ namespace VermHook
 		_out << std::endl;
 	}
 
-	void Logger::_write(std::string prefix, std::string msg, const char* line, const char* filename)
+	void Logger::_write(std::string prefix, std::string msg, int line, const char* filename)
 	{
 		RawWrite(prefix);
 
@@ -41,8 +41,8 @@ namespace VermHook
 			if (filename)
 				RawWrite(filename);
 			if (line)
-				RawWrite("(" + string(line) + ")");
-			RawWrite("]");
+				RawWrite("(" + std::to_string(line) + ")");
+			RawWrite("] ");
 		}
 
 		RawWrite(msg);

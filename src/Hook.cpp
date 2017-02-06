@@ -66,10 +66,10 @@ namespace VermHook
 
 	void InitHook()
 	{
-		Logger::Debug("Initialize hook.");
+		LOG_T("Initialize hook.");
 		routine = std::make_unique<Routinetype>();
 
-		Logger::Debug("mapcalling lua functions");
+		LOG_D("mapcalling lua functions");
 		auto luaModule = GetModuleHandle(LuaModule.c_str());
 
 #define mapcall(name) *(void**)(&name) = GetProcAddress(luaModule, #name);\

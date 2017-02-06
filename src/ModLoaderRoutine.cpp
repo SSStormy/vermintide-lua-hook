@@ -9,14 +9,14 @@ namespace VermHook
 {
 	void ModLoaderRoutine::PostInit()
 	{
-		Logger::Debug("Routine: ModLoader");
+		LOG_D("Routine: ModLoader");
 
 		_iatInitHook = unique_ptr<IATHook>(IATHook::Hook(LuaModule, "luaL_openlibs", (DWORD)ModLoaderRoutine::InitLua));
 		_iatLoadBufferHook = unique_ptr<IATHook>(IATHook::Hook(LuaModule, "luaL_loadbuffer", (DWORD)ModLoaderRoutine::LoadBufferHook));
 
 		if (!Utils::ElementExists(Globals::BaseModInitFileDir))
 		{
-			Logger::Debug("Globals::BaseModInitFileDir (" + string(Globals::BaseModInitFileDir) + ") doesn't exist.");
+			LOG_W("Globals::BaseModInitFileDir (" + string(Globals::BaseModInitFileDir) + ") doesn't exist.");
 			Globals::DllReturnValue = FALSE;
 		}
 	}
@@ -47,7 +47,7 @@ namespace VermHook
 	void ModLoaderRoutine::InitLua(LuaState* state)
 	{
 #define LEXEC(msg, dir) \
-		Logger::Debug(msg); \
+		LOG_T(msg); \
 		result = luaL_dofile(state, dir); \
 		if(result != 0) { \
 			Logger::Warn("==== FAILED TO INJECT MODLOADER: " + string(lua_tolstring(state, -1, NULL))); \
@@ -72,7 +72,7 @@ namespace VermHook
 			{ NULL, NULL }
 		};
 
-		Logger::Debug("Registering custom libraries.");
+		LOG_T("Registering custom libraries.");
 		luaL_register(state, "Log", log);
 		luaL_register(state, "Path", path);
 
@@ -81,6 +81,6 @@ namespace VermHook
 		LEXEC("Running tests...", Globals::TestFileDir);
 		LEXEC("Running modloader base...", Globals::BaseModInitFileDir);
 
-		Logger::Debug("Modloader injected.");
+		LOG_T("Modloader injected.");
 	}
 }

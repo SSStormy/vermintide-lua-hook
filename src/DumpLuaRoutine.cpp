@@ -43,7 +43,7 @@ namespace VermHook
 
 	void DumpLuaRoutine::PostInit()
 	{
-		Logger::Debug("Routine: DumpLua");
+		LOG_D("Routine: DumpLua");
 		LoadBufferHook.reset(IATHook::Hook(LuaModule, "luaL_loadbuffer", (DWORD)hep_luaL_loadbuffer));
 	}
 }

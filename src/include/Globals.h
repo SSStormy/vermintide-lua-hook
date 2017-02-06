@@ -20,7 +20,7 @@ using std::string;
 #ifdef BENCHMARK
 #include <chrono>
 #define BENCHMARK_START auto __benchmarkStart = std::chrono::high_resolution_clock::now()
-#define BENCHMARK_END(obj) VermHook::Logger::Debug(obj + " finished in: "s + std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - __benchmarkStart).count()) + "ms")
+#define BENCHMARK_END(obj) LOG_D(obj + " finished in: "s + std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - __benchmarkStart).count()) + "ms")
 #else
 #define BENCHMARK_START
 #define BENCHMARK_END()
