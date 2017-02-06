@@ -14,5 +14,6 @@ namespace VermHook
 		static void Debug(std::string msg, const char* line = nullptr, const char* filename = nullptr);
 		static void Write(std::string msg, const char* line = nullptr, const char* filename = nullptr);
 		static void RawWrite(std::string msg);
+		static void NewLine();
 	};
 }

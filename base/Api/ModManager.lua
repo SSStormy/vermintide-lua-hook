@@ -68,7 +68,7 @@ function ModManager:initialize(modDir, configDir, ...)
     
     if self._moad_load_result then
         Log.Warn("Error in ModManager LoadModsInDir. Dumping error table:")
-        Log.Warn(Api.json.encode(self._moad_load_result))
+        Log.Dump(Api.json.encode(self._moad_load_result))
     end
     
     Log.Debug("Loaded", tostring(self:GetModCount()), "mods.")
@@ -139,8 +139,10 @@ function ModManager:Enable(modHandle)
     
     if index == nil then 
         Log.Warn("Tried to enable mod while it is not in the disabled list.")
-        Log.Debug("Mod handle dump:", Api.json.encode(modHandle))
-        Log.Debug("Disabled mod dump:", Api.json.encode(disabledMods))
+        Log.Debug("Mod handle dump:")
+        Log.Dump(Api.json.encode(modHandle))
+        Log.Debug("Disabled mod dump:")
+        Log.Dump(Api.json.encode(disabledMods))
         return
     end
     
@@ -191,7 +193,7 @@ function ModManager:SaveConfig()
     end
     
     local data = Api.json.encode(self:GetConfig())
-    Log.Debug("Config data dump:", data)
+    Log.Dump("Config data dump:", data)
     
     fHandle:write(data)
     fHandle:close()

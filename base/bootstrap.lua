@@ -1,3 +1,5 @@
+Log.Write("Hello world")
+
 if false then
     Log.Create()
 end

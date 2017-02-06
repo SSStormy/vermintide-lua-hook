@@ -16,13 +16,19 @@ namespace VermHook
 
 	void Logger::Write(string msg, const char* line, const char* filename)
 	{
-		_write("	   	    ... ", msg, line, filename);
+		_write("            ... ", msg, line, filename);
 	}
 
 	void Logger::RawWrite(std::string msg)
 	{
 		std::cout << msg;
 		_out << msg;
+	}
+
+	void Logger::NewLine()
+	{
+		std::cout << std::endl;
+		_out << std::endl;
 	}
 
 	void Logger::_write(std::string prefix, std::string msg, const char* line, const char* filename)
@@ -40,7 +46,6 @@ namespace VermHook
 		}
 
 		RawWrite(msg);
-		std::cout << std::endl;
-		_out << std::endl;
+		NewLine();
 	}
 }

@@ -22,7 +22,8 @@ function AbstractHook:HandleHook(hookTable, key)
 	if hookTable[key] == nil or #hookTable[key] == 0 then return end
 
 	for _, hookData in ipairs(hookTable[key]) do
-        Log.Debug("Handling hook:", Api.json.encode(hookData))
+        Log.Debug("Handling hook:")
+        Log.Dump(Api.json.encode(hookData))
         
         if hookData:GetFileExecuteDir() ~= nil then
             Log.Debug("Handling file")
@@ -76,7 +77,8 @@ function AbstractHook:AddHook(key, file, chunk, modHandle, isPreHook)
     -- insert hook data into the indexed table hookTable[requireString]
     table.insert(hookTable[key], hookData)
     
-    Log.Debug("Added hook data:", Api.json.encode(hookData))
+    Log.Debug("Added hook data:")
+    Log.Dump(Api.json.encode(hookData))
     
     return hookData
 end
@@ -124,7 +126,7 @@ function AbstractHook:ReadConfig(modHandle, config, modFolder)
         return 0, nil
     end 
     
-    Log.Debug(Api.json.encode(obj))
+    Log.Dump(Api.json.encode(obj))
     
     local code, err = self:_json_append_hooks(true, obj[self.JSON_PRE], modHandle)
     if code ~= 0 then return code, err end

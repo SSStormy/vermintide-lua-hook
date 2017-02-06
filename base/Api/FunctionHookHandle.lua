@@ -73,8 +73,10 @@ FunctionHookHandle.Create = function(targetSignature, hookFunction, isPre, allow
     -- do some tests
     local entry = FunctionHookHandle.Hooks[targetSignature]
     assert_e(entry)
-    Log.Debug(targetSignature, "Pre hooks:", Api.json.encode(entry.PreHooks))
-    Log.Debug(targetSignature, "Post hooks:", Api.json.encode(entry.PostHooks))
+    Log.Debug(targetSignature, "Pre hooks:")
+    Log.Dump(Api.json.encode(entry.PreHooks))
+    Log.Debug(targetSignature, "Post hooks:")
+    Log.Dump(Api.json.encode(entry.PostHooks))
     
     return handle
 end
@@ -93,7 +95,8 @@ function FunctionHookHandle:GetTargetFunction(shouldUseCache)
         
         if self._targetFunction == nil then 
             Log.Warn("Tried to force cache GetTargetFunction but cache was null.\r\n"..debug.traceback())
-            Log.Debug("Function hook handle dump:", Api.json.encode(self))
+            Log.Debug("Function hook handle dump:")
+            Log.Dump(Api.json.encode(self))
         end
         
         return self._targetFunction 
@@ -103,7 +106,8 @@ function FunctionHookHandle:GetTargetFunction(shouldUseCache)
     
     if not Api.IsFunction(func) then
         Log.Warn("GetTargetFunction eval returns returns a type other then function:", type(func))
-        Log.Debug("Hook dump:", Api.json.encode(self))
+        Log.Debug("Hook dump:")
+        Log.Dump(Api.json.encode(self))
         return nil
     end
     
@@ -210,7 +214,8 @@ function FunctionHookHandle:Enable(allowDuplicates)
     -- make sure signature is all good
     if self._targetFunction == nil then
         Log.Warn("Failed evaluating target function for FunctionHookHandle.")
-        Log.Debug("Hook dump:", Api.json.encode(self))
+        Log.Debug("Hook dump:")
+        Log.Dump(Api.json.encode(self))
         return             
     end
     
@@ -237,8 +242,10 @@ local f = function(...)
             local status, ret = Api.Std.pcall(v:GetHookFunction(), ...)
             if not status then
                 Log.Warn("Function hook Api.Std.pcall failed, error:", tostring(ret))
-                Log.Debug("Hook data:", Api.json.encode(v))
-                Log.Debug("In hook table:", Api.json.encode(tabl))
+                Log.Debug("Hook data:")
+                Log.Dump(Api.json.encode(v))
+                Log.Debug("In hook table:")
+                Log.Dump(Api.json.encode(tabl))
             end
         end
     end
@@ -315,8 +322,10 @@ function FunctionHookHandle:_append_hooks_entry(allowDuplicates)
             if hook:GetHookFunction() == self:GetHookFunction() then
                 Log.Warn("Duplicate hooks found in table at", tostring(tabl))
                 Log.Debug("Tables: PreHook:", tostring(entry.PreHooks), "PostHook:", tostring(entry.PostHook))
-                Log.Debug("Our hook dump:", Api.json.encode(self))
-                Log.Debug("Other hook dump:", Api.json.encode(hook))
+                Log.Debug("Our hook dump:")
+                Log.Dump(Api.json.encode(self))
+                Log.Debug("Other hook dump:")
+                Log.Dump(Api.json.encode(hook))
                 return 1
             end
         end

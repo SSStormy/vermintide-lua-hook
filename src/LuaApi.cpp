@@ -24,7 +24,8 @@ namespace VermHook
 
 	int LuaApi::Log::Dump(LuaState* state)
 	{
-		Logger::Write("                "s + ConcatVaargs(state));
+		Logger::RawWrite("                "s + ConcatVaargs(state));
+		Logger::NewLine();
 		return 0;
 	}
 

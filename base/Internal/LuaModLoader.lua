@@ -132,7 +132,7 @@ function LuaModLoader:LoadMod(directory, modFolder, disabledMods)
     end
     
     Log.Write("Loaded mod:", modFolder)
-    Log.Debug("Dump:", Api.json.encode(mod))
+    Log.Dump(Api.json.encode(mod))
     return mod
 end
 

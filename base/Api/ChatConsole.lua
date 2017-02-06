@@ -131,7 +131,8 @@ function ChatConsole:RegisterCommand(command)
     assert_e(Api.IsTable(command))
     assert_e(Api.IsString(command:GetTrigger()))
 
-    Log.Debug("Registering command:", Api.json.encode(command))
+    Log.Debug("Registering command:")
+    Log.Dump(Api.json.encode(command))
     if self._commands[command:GetTrigger()] ~= nil then 
         Log.Debug("Failed registering command.")
         return false 
