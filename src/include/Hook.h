@@ -52,7 +52,7 @@ namespace VermHook
 	extern int(*luaL_loadbuffer)(LuaState*, const char* /*buff*/, size_t, const char* /*name*/);
 	extern int(*luaL_loadstring)(LuaState*, const char*);
 	extern void(*luaL_register) (LuaState*, const char* /*libname*/, const LuaReg*);
-	extern void(*lua_pushboolean)(LuaState*, bool);
+	extern void(*lua_pushboolean)(LuaState*, int);
 	extern int(*lua_gettop)(LuaState*);
 	extern void(*lua_settable)(LuaState*, int /*index*/);
 	extern int(*luaL_error)(LuaState*, const char */*fmt*/, ...);

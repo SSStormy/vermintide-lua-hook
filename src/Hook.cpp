@@ -21,7 +21,7 @@ namespace VermHook
 	void(*lua_remove) (LuaState*, int /*index*/);
 	int(*luaL_loadbuffer)(LuaState*, const char* /*buff*/, size_t, const char* /*name*/);
 	int(*luaL_loadstring)(LuaState*, const char*);
-	void(*lua_pushboolean)(LuaState*, bool);
+	void(*lua_pushboolean)(LuaState*, int);
 	int(*lua_gettop)(LuaState*);
 	void(*lua_settable)(LuaState*, int /*index*/);
 	int(*luaL_error)(LuaState*, const char */*fmt*/, ...);

@@ -96,7 +96,7 @@ int argc = lua_gettop(state); \
 	int LuaApi::Path::ElementExists(LuaState* state)
 	{
 		PARAM_CHECK("Invalid Elements exists params");
-		lua_pushboolean(state, Utils::ElementExists(path, dirOnly));
+		lua_pushboolean(state, Utils::ElementExists(path, dirOnly) ? 1 : 0);
 		return 1;
 	}
 }
