@@ -13,9 +13,10 @@ namespace VermHook
 			static int Warn(LuaState* state);
 			static int Debug(LuaState* state);
 			static int Create(LuaState* state);
+			static int Dump(LuaState* state);
 
 		private:
-			static string HandleConsoleOut(LuaState* state, string prefix);
+			static string ConcatVaargs(LuaState* state);
 		};
 
 		class Path

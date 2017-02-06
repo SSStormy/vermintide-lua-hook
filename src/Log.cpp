@@ -6,27 +6,41 @@ namespace VermHook
 
 	void Logger::Warn(string msg, const char* line, const char* filename)
 	{
-		Write("[!WARNING] "s + msg, line, filename);
+		_write("  [WARNING] ... ", msg, line, filename);
 	}
 
 	void Logger::Debug(string msg, const char* line, const char* filename)
 	{
-		Write(msg, line, filename);
+		_write("    [DEBUG] ... ", msg, line, filename);
 	}
 
 	void Logger::Write(string msg, const char* line, const char* filename)
 	{
-		_write(msg.c_str(), line, filename);
+		_write("	   	    ... ", msg, line, filename);
 	}
 
-	void Logger::_write(const char* msg, const char* line, const char* filename)
+	void Logger::RawWrite(std::string msg)
 	{
-		if (filename)
-			_out << filename;
-		if (line)
-			_out << "(" << line << ")";
+		std::cout << msg;
+		_out << msg;
+	}
 
-		std::cout << msg << std::endl;
-		_out << msg << std::endl;
+	void Logger::_write(std::string prefix, std::string msg, const char* line, const char* filename)
+	{
+		RawWrite(prefix);
+
+		if (filename || line)
+		{
+			RawWrite("[");
+			if (filename)
+				RawWrite(filename);
+			if (line)
+				RawWrite("(" + string(line) + ")");
+			RawWrite("]");
+		}
+
+		RawWrite(msg);
+		std::cout << std::endl;
+		_out << std::endl;
 	}
 }

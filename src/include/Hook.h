@@ -35,7 +35,6 @@ namespace VermHook
 	const std::string LuaModule = "lua51.dll"s;
 #pragma warning(disable:4138)
 
-
 	extern void(*lua_pushcclosure) (LuaState*, LuaCFunction, int);
 	extern void(*lua_setfield) (LuaState*, int, const char*);
 	extern void(*luaL_openlibs) (LuaState*);
@@ -62,6 +61,7 @@ namespace VermHook
 	extern inline int luaL_dofile(LuaState* state, const char* fileDir);
 	extern void(*lua_rawseti)(LuaState*, int /*index*/, int /*n*/);
 	extern void(*lua_gettable)(LuaState*, int /*index*/);
+
 #define lua_getglobal(L,s)  lua_getfield(L, LUA_GLOBALSINDEX, s)
 
 	// luaC for lua custom

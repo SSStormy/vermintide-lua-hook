@@ -2,26 +2,33 @@
 #include "include/Utils.h"
 #include "include\LuaApi.h"
 #include <sstream>
+#include "include/Globals.h"
 
 namespace VermHook
 {
 	int LuaApi::Log::Write(LuaState* state)
 	{
-		Logger::Write(HandleConsoleOut(state, "Lua"), false, false);
+		Logger::Write(ConcatVaargs(state));
 		return 0;
 	}
 	int LuaApi::Log::Warn(LuaState* state)
 	{
-		Logger::Warn(HandleConsoleOut(state, "Lua WARNING"), false, false);
+		Logger::Warn(ConcatVaargs(state));
 		return 0;
 	}
 	int LuaApi::Log::Debug(LuaState* state)
 	{
-		Logger::Debug(HandleConsoleOut(state, "Lua debug"), false, false);
+		Logger::Debug(ConcatVaargs(state));
 		return 0;
 	}
 
-	string LuaApi::Log::HandleConsoleOut(LuaState* state, string prefix)
+	int LuaApi::Log::Dump(LuaState* state)
+	{
+		Logger::Write("                "s + ConcatVaargs(state));
+		return 0;
+	}
+
+	string LuaApi::Log::ConcatVaargs(LuaState* state)
 	{
 		// Handle vaargs
 		int args = lua_gettop(state);
@@ -30,17 +37,17 @@ namespace VermHook
 
 		std::stringstream str;
 
-		str << ">> " << prefix << ":";
-
 		for (int i = 0; i < args; i++)
 		{
 			// for handling a sigsegv on lua_tolstring with index 1 being nil
 			int type = lua_type(state, 1);
 
-			str << " " <<
-				((type != LUA_TNIL)
+			str << ((type != LUA_TNIL)
 					? lua_tolstring(state, 1, NULL)
 					: "nil");
+
+			if(i != args)
+				str << " ";
 
 			lua_remove(state, 1);
 		}

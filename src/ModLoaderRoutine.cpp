@@ -60,7 +60,8 @@ namespace VermHook
 			{ "Create",  LuaApi::Log::Create },
 			{ "Write",  LuaApi::Log::Write },
 			{ "Warn",  LuaApi::Log::Warn},
-			{ "Debug",  LuaApi::Log::Debug},
+			{ "Debug",  LuaApi::Log::Debug },
+			{ "Dump",  LuaApi::Log::Dump},
 			{ NULL, NULL }
 		};
 
