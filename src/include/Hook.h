@@ -22,6 +22,8 @@ namespace VermHook
 #define LUA_ERRFILE     (LUA_ERRERR+1)
 
 #define LUA_GLOBALSINDEX	(-10002)
+#define LUA_IDSIZE      60
+
 
 	class LuaState;
 	typedef int(*LuaCFunction) (LuaState*);
@@ -31,6 +33,19 @@ namespace VermHook
 		const char* name;
 		LuaCFunction function;
 	} LuaReg;
+
+	typedef struct LuaDebug {
+		int event;
+		const char *name;           /* (n) */
+		const char *namewhat;       /* (n) */
+		const char *what;           /* (S) */
+		const char *source;         /* (S) */
+		int currentline;            /* (l) */
+		int nups;                   /* (u) number of upvalues */
+		int linedefined;            /* (S) */
+		int lastlinedefined;        /* (S) */
+		char short_src[LUA_IDSIZE]; /* (S) */
+	} LuaDebug;
 
 	const std::string LuaModule = "lua51.dll"s;
 #pragma warning(disable:4138)
@@ -61,6 +76,8 @@ namespace VermHook
 	extern inline int luaL_dofile(LuaState* state, const char* fileDir);
 	extern void(*lua_rawseti)(LuaState*, int /*index*/, int /*n*/);
 	extern void(*lua_gettable)(LuaState*, int /*index*/);
+	extern int (*lua_getinfo)(LuaState*, const char */*what*/, LuaDebug*/*ar*/);
+	extern int(*lua_getstack)(LuaState*, int /*level*/, LuaDebug */*ar*/);
 
 #define lua_getglobal(L,s)  lua_getfield(L, LUA_GLOBALSINDEX, s)
 

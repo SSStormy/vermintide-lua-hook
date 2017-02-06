@@ -3,6 +3,8 @@
 #include "include\LuaApi.h"
 #include <sstream>
 #include "include/Globals.h"
+#include <assert.h>
+#include "include/Globals.h"
 
 namespace VermHook
 {
@@ -11,14 +13,37 @@ namespace VermHook
 		Logger::Write(ConcatVaargs(state));
 		return 0;
 	}
+
+#define TRACE_WRITE(method) \
+		int outCount; \
+		string outSrc = nullptr; \
+		GetFunctionInfo(state, &outCount, &outSrc); \
+		Logger::method(ConcatVaargs(state), outSrc.c_str(), outCount);
+
 	int LuaApi::Log::Warn(LuaState* state)
 	{
-		Logger::Warn(ConcatVaargs(state));
+		//TRACE_WRITE(Warn);
 		return 0;
 	}
 	int LuaApi::Log::Debug(LuaState* state)
 	{
-		Logger::Debug(ConcatVaargs(state));
+		//TRACE_WRITE(Debug);
+
+		LuaDebug debug;
+
+		std::cout << lua_gettop(state) << std::endl;
+		auto stackResult = lua_getstack(state, 1, &debug);
+		LOG_T("Gotten stack");
+		assert(stackResult == 1);
+		auto infoResult = lua_getinfo(state, "Sl", &debug);
+		assert(infoResult != 0);
+		std::cout << debug.source << std::endl;
+
+		LOG_T("Gotten info");
+
+		//debug.currentline;
+		//std::string(debug.source);
+
 		return 0;
 	}
 
@@ -27,6 +52,11 @@ namespace VermHook
 		Logger::RawWrite("                "s + ConcatVaargs(state));
 		Logger::NewLine();
 		return 0;
+	}
+
+	void LuaApi::Log::GetFunctionInfo(LuaState* state, int* outCount, string* outSrc)
+	{
+
 	}
 
 	string LuaApi::Log::ConcatVaargs(LuaState* state)

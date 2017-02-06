@@ -17,6 +17,7 @@ namespace VermHook
 
 		private:
 			static string ConcatVaargs(LuaState* state);
+			static void GetFunctionInfo(LuaState* state, int* outCount, string* outSrc);
 		};
 
 		class Path
