@@ -6,6 +6,33 @@ ModManager._mod_loader_class = Api.dofile_e("mods/base/internal/LuaModLoader.lua
 --]]
 local KEY_DISABLED = "DisabledMods"         
 
+function ModManager:_backupConfig()
+    local i = 1;
+    local dir
+    local hFinal = nil
+   
+    local hIn, err= io.open(self:GetConfigDir(), "r")
+    if hIn == nil then Log.Debug("Failed backing up config because opening the file at configDir (", tostring(self:GetConfigDir()), "yielded error:", tostring(err)) return end
+    cpyData = hIn:read("*a")
+    hIn:close()
+   
+    repeat
+        dir = self:GetConfigDir() .. "." .. tostring(i) .. ".bak"
+        i = i + 1
+        
+        -- os.rename told me to fuck off so we're using io
+        if not Path.ElementExists(dir) then
+            hFinal = io.open(dir, "w")
+        end
+
+   until hFinal ~= nil
+   
+    hFinal:write(cpyData)
+    hFinal:close()
+   
+    Log.Warn("Backed up previous config to", dir)
+end
+
 --[[ ---------------------------------------------------------------------------------------
         Name: initialize
         Desc: Constructs a ModManager and loads available mods
@@ -27,34 +54,9 @@ function ModManager:initialize(modDir, configDir, ...)
         self._cfg_load_result = self.LoadConfig(configDir)
     
     if self._cfg_load_result then
-        Log.Warn("Failed loading ModManager config, falling back to default:", self.configDir)
+        Log.Warn("Failed loading ModManager config at:", tostring(self._configDir))
        
-        if not Path.ElementExists(configDir) then return end
-       
-       -- back up the invalid config file
-        local i = 1;
-        local dir
-        local hFinal = nil
-       
-        hIn= io.open(configDir, "r")
-        cpyData = hIn:read("*a")
-        hIn:close()
-       
-        repeat
-            dir = configDir .. "." .. tostring(i) .. ".bak"
-            i = i + 1
-            
-            -- os.rename told me to fuck off so we're using io
-            if not Path.ElementExists(dir) then
-                hFinal = io.open(dir, "w")
-            end
-
-       until hFinal ~= nil
-       
-        hFinal:write(cpyData)
-        hFinal:close()
-       
-        Log.Warn("Backed up previous config to", dir)
+        self:_backupConfig()
        
         -- setup new file
         self._config[KEY_DISABLED] = { }
@@ -179,10 +181,17 @@ end
             On Failiure:    (string) error message
 --]] ---------------------------------------------------------------------------------------
 function ModManager:SaveConfig()
-    local fHandle, err = io.open(self:GetConfigDir(), "w+")
-    if not fHandle then return err end
+    local dir = self:GetConfigDir()
+    Log.Debug("Saving config to", tostring(dir))
+    
+    local fHandle, err = io.open(dir, "w+")
+    if not fHandle then 
+        Log.Debug("Failed opening file handle for config saving.")
+        return err 
+    end
     
     local data = Api.json.encode(self:GetConfig())
+    Log.Debug("Config data dump:", data)
     
     fHandle:write(data)
     fHandle:close()
