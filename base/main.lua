@@ -53,4 +53,26 @@ assert(Api.ChatConsole:RegisterCommand(Api.ConsoleCommandClass("f", "Executes lu
                 return chunk() 
             end)))
 
+
+local function printHelp(_, input)
+    local specificCmd = Api.Trim(input)
+    
+    if not specificCmd or specificCmd == '' then
+       -- print all commands
+       Api.ChatConsole:PrintChat("Available commands:")
+        for key, _ in pairs(Api.ChatConsole._commands) do
+            Api.ChatConsole:PrintChat(key)
+        end
+        
+        return
+    end
+    
+    -- info about specific command
+    local cmd = Api.ChatConsole:GetCommand(specificCmd)
+    if not cmd then Api.ChatConsole:PrintChat(specificCmd .. ": command not found.") return end
+    Api.ChatConsole:PrintChat(cmd:GetTrigger() .. " --- " .. cmd:GetDescription())
+end
+
+assert(Api.ChatConsole:RegisterCommand(Api.ConsoleCommandClass("help", "Prints all available commands or help about a particular one.", baseMod, printHelp)))
+
 Log.Write("Main.lua is done.") 

@@ -58,7 +58,7 @@ end
 ChatConsole.SendMessage = function(...) Log.Warn("Tried to call unhijacked ChatConsole.SendMessage.", debug.traceback())  end
 
 --[[ ---------------------------------------------------------------------------------------
-        Name: SendLocalChat
+        Name: RawSendLocalChat
         Desc: Sends a chat message to our client.
         Args: 
             (string message)    - the message to display
@@ -67,7 +67,7 @@ ChatConsole.SendMessage = function(...) Log.Warn("Tried to call unhijacked ChatC
             (string isSystem)   - whether to use a sender or not to.
     (opt)   (string sender)     - the sender.
 --]] ---------------------------------------------------------------------------------------
-function ChatConsole.SendLocalChat(message, isDev, isSystem, sender)
+function ChatConsole.RawSendLocalChat(message, isDev, isSystem, sender)
     assert_e(Api.IsString(message))
     
     local msg_tables = global_chat_gui.chat_output_widget.content.message_tables
@@ -81,6 +81,14 @@ function ChatConsole.SendLocalChat(message, isDev, isSystem, sender)
     }
     
     table.insert(msg_tables, msg)
+end
+
+--[[ ---------------------------------------------------------------------------------------
+        Name: PrintChat
+        Desc: Prints a message into the game chat without sending it, marking it as a Lua message.
+--]] ---------------------------------------------------------------------------------------
+function ChatConsole:PrintChat(message)
+    self.RawSendLocalChat(message, true, false, "Lua: ")
 end
 
 local function detour(message)
@@ -99,7 +107,7 @@ local function detour(message)
         callbackMsg = tostring(result)
     end
     
-    ChatConsole.SendLocalChat(callbackMsg, true, false, "LUA: ")
+    Api.ChatConsole:PrintChat(callbackMsg)
     
     return false
 end
@@ -149,7 +157,7 @@ end
             (string command)    - the command trigger.
         Return: nil or the ConsoleCommand table of the given command.
 --]] ---------------------------------------------------------------------------------------
-function ChatConsole:GetCommnand(command)
+function ChatConsole:GetCommand(command)
     assert_e(Api.IsString(command))
     return self._commands[command]
 end
@@ -176,7 +184,7 @@ function ChatConsole:HandleChatInput(input)
         
         cmdKey = cmdKey .. token.Data
         
-        status, err = self:TryCommand(cmdKey, input:sub(token.Pos):match'^%s*(.*%S)' or '')
+        status, err = self:TryCommand(cmdKey, Api.Trim(input:sub(token.Pos)))
         if status then return true, err end
         
         cmdKey = cmdKey .. " "

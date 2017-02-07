@@ -6,7 +6,7 @@ local configError = Api.ModManager:GetLoadConfigError()
 local modLoadErrors = Api.ModManager:GetLoadModsError()
 
 local function writeChat(message)
-   Api.ChatConsole.SendLocalChat(message, true, false, "VermHook: ")
+   Api.ChatConsole.RawSendLocalChat(message, true, false, "VermHook: ")
 end
 
 if configError then

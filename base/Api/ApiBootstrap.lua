@@ -183,6 +183,18 @@ end
 
 
 --[[ ---------------------------------------------------------------------------------------
+        Name: Trim
+        Desc: Trims the beginning and end of the given string from any whitespace characters.
+        Args: 
+            (string fileDir)    - the target string.
+        Returns: a new trimmed string.
+                
+--]] ---------------------------------------------------------------------------------------
+Api.Trim = function(str)
+    return str:match'^%s*(.*%S)' or ''
+end
+
+--[[ ---------------------------------------------------------------------------------------
                             Imported libraries/class instances
 --]] ---------------------------------------------------------------------------------------
 
