@@ -39,6 +39,19 @@ namespace VermHook
 		return 0;
 	}
 
+	int LuaApi::Log::Toggle(LuaState* state)
+	{
+		Logger::IsLoggingOn = !Logger::IsLoggingOn;
+		luaC_pushboolean(state, Logger::IsLoggingOn);
+		return 1;
+	}
+
+	int LuaApi::Log::IsEnabled(LuaState* state)
+	{
+		luaC_pushboolean(state, Logger::IsLoggingOn == true);
+		return 1;
+	}
+
 	string LuaApi::Log::ConcatVaargs(LuaState* state)
 	{
 		// Handle vaargs
@@ -114,7 +127,7 @@ int argc = lua_gettop(state); \
 	int LuaApi::Path::ElementExists(LuaState* state)
 	{
 		PARAM_CHECK("Invalid Elements exists params");
-		lua_pushboolean(state, Utils::ElementExists(path, dirOnly) ? 1 : 0);
+		luaC_pushboolean(state, Utils::ElementExists(path, dirOnly));
 		return 1;
 	}
 }

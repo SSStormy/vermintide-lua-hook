@@ -10,6 +10,7 @@ namespace VermHook
 	private:
 		static void _write(std::string prefix, std::string msg, int line, const char* filename);
 	public:
+		static bool IsLoggingOn;
 		static void Warn(std::string msg, const char* filename = nullptr, int line = 0);
 		static void Debug(std::string msg, const char* filename = nullptr, int line = 0);
 		static void Write(std::string msg, const char* filename = nullptr, int line = 0);

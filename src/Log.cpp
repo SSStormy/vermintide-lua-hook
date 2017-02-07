@@ -2,6 +2,7 @@
 
 namespace VermHook
 {
+	bool Logger::IsLoggingOn = true;
 	static std::ofstream _out(Globals::LogFileName);
 
 	void Logger::Warn(string msg, const char* filename, int line)

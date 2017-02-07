@@ -80,6 +80,7 @@ namespace VermHook
 	extern int(*lua_getstack)(LuaState*, int /*level*/, LuaDebug */*ar*/);
 
 #define lua_getglobal(L,s)  lua_getfield(L, LUA_GLOBALSINDEX, s)
+#define luaC_pushboolean(L,b)	lua_pushboolean(L, b ? 1 : 0)
 
 	// luaC for lua custom
 	extern inline void luaC_pop(LuaState* state, int n = 1);

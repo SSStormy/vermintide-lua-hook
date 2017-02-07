@@ -61,7 +61,9 @@ namespace VermHook
 			{ "Write",  LuaApi::Log::Write },
 			{ "Warn",  LuaApi::Log::Warn},
 			{ "Debug",  LuaApi::Log::Debug },
-			{ "Dump",  LuaApi::Log::Dump},
+			{ "Dump",  LuaApi::Log::Dump },
+			{ "Toggle",  LuaApi::Log::Toggle},
+			{ "IsEnabled",  LuaApi::Log::IsEnabled},
 			{ NULL, NULL }
 		};
 

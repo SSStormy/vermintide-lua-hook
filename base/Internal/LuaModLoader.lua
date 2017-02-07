@@ -111,16 +111,14 @@ function LuaModLoader:LoadMod(directory, modFolder, disabledMods)
     local KEY_WEBSITE =  "Website"
     
     local function verifyStringField(tabl, key)
-        if tabl[key] == nil             then return "tabl." .. key .. " is nil." end
-        if not Api.IsString(tabl[key])  then return "tabl." .. key .. " failed testtype()." end
+        if tabl[key] == nil             then return "config." .. key .. " is nil. String value is required." end
+        if not Api.IsString(tabl[key])  then return "config." .. key .. " failed verifyStringField() check. Is the " .. key .. " field set nill or to a not a string?" end
     end
     
     local result 
-    result = verifyStringField(cfg, KEY_NAME)       if result then return result end
-    result = verifyStringField(cfg, KEY_VERSION)    if result then return result end
-    result = verifyStringField(cfg, KEY_AUTHOR)     if result then return result end
-    result = verifyStringField(cfg, KEY_CONTACT)    if result then return result end
-    result = verifyStringField(cfg, KEY_WEBSITE)    if result then return result end
+    result = verifyStringField(cfg, KEY_NAME, true)         if result then return result end
+    result = verifyStringField(cfg, KEY_VERSION, true)      if result then return result end
+    result = verifyStringField(cfg, KEY_AUTHOR, true)       if result then return result end
     
     local mod = modHandleClass(self:GetOwner(), modFolder, disabledMods, cfg[KEY_NAME], cfg[KEY_VERSION], cfg[KEY_AUTHOR], cfg[KEY_CONTACT], cfg[KEY_WEBSITE])
     

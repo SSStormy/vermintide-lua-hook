@@ -67,7 +67,7 @@ FunctionHookHandle.Hooks = { }
         Returns: A FunctionHookHandle class instance.
 --]] ---------------------------------------------------------------------------------------
 FunctionHookHandle.Create = function(targetSignature, hookFunction, isPre, allowDuplicates)
-    local handle = Api.FunctionHookClass(targetSignature, hookFunction, isPre)
+    local handle = FunctionHookHandle(targetSignature, hookFunction, isPre)
     handle:Enable(allowDuplicates)
     
     -- do some tests
@@ -232,44 +232,6 @@ function FunctionHookHandle:Enable(allowDuplicates)
     end
 end
 
-local targetOverrider =  [[
-local f = function(...)
-    local entry = Api.FunctionHookClass.Hooks[signature]
-    
-    local function callAll(tabl, ...)
-        for k,v in ipairs(tabl) do
-            Log.Debug("Handling callAll for fhook value:", tostring(v))
-            local status, ret = Api.Std.pcall(v:GetHookFunction(), ...)
-            if not status then
-                Log.Warn("Function hook Api.Std.pcall failed, error:", tostring(ret))
-                Log.Debug("Hook data:")
-                Log.Dump(Api.json.encode(v))
-                Log.Debug("In hook table:")
-                Log.Dump(Api.json.encode(tabl))
-            end
-        end
-    end
-    
-    if entry == nil then
-        Log.Warn("TARGET OVERRIDER FOR SIGNATURE", signature, "COULD NOT FIND ITS SIGNATURE'S ENTRY IN THE HOOK TABLE!")
-        return nil
-    end
-    
-    Log.Debug("Handling pre", signature)
-    callAll(entry.PreHooks, ...)
-    
-    Log.Debug("Calling original", signature)
-    local retvals = {entry.Original(...)}
-    
-    Log.Debug("Handling post", signature)
-    callAll(entry.PostHooks, ...)
-    
-    return unpack(retvals)
-end
-
-return f
-]]
-
 function FunctionHookHandle:_create_hooks_entry()
     
     -- have to be extra sure
@@ -288,7 +250,8 @@ function FunctionHookHandle:_create_hooks_entry()
     -- [[ overwrite original method with new one. ]] --
     
     -- Instantiate the targetOverrider function and capture the target signature
-    local overriderChunk, err1 = Api.Std.loadstring("local signature = \"" .. sign .. "\"\r\n" .. targetOverrider)
+    local overriderChunk, err1 = Api.Std.loadfile("mods/base/Internal/FHookTargetOverrider.lua")
+    --local overriderChunk, err1 = Api.Std.loadstring("local signature = \"" .. sign .. "\"\r\n" .. targetOverrider)
     assert_e(overriderChunk, "Target overrider loadstring evaluated to a nil chunk: " .. tostring(err1))
     
     local customFunc, err2 = overriderChunk(sign)

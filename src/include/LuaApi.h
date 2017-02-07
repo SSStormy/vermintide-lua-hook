@@ -14,6 +14,8 @@ namespace VermHook
 			static int Debug(LuaState* state);
 			static int Create(LuaState* state);
 			static int Dump(LuaState* state);
+			static int Toggle(LuaState* state);
+			static int IsEnabled(LuaState* state);
 
 		private:
 			static string ConcatVaargs(LuaState* state);

@@ -26,7 +26,7 @@ Api.LoadBufferHook:AddHook("@scripts/game_state/state_ingame.lua", nil,
         Api.ChatConsole:HijackChat()
     ]], baseMod, false)
     
-Api.LoadBufferHook:AddHook("@scripts/ui/hud_ui/team_member_unit_frame_ui_definitions.lua", nil, "script_data.debug_enabled = true", baseMod, false)
+Api.LoadBufferHook:AddHook("@scripts/ui/hud_ui/team_member_unit_frame_ui_definitions.lua", "Internal/PostPlay.lua", nil, baseMod, false)
     
 --[[ ---------------------------------------------------------------------------------------
                                         Chat commands 
