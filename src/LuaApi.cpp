@@ -15,37 +15,20 @@ namespace VermHook
 	}
 
 #define TRACE_WRITE(method) \
-		int outCount; \
-		string outSrc = nullptr; \
-		GetFunctionInfo(state, &outCount, &outSrc); \
-		Logger::method(ConcatVaargs(state), outSrc.c_str(), outCount);
+		LuaDebug *debug = new LuaDebug(); \
+		auto stackResult = lua_getstack(state, 1, debug); \
+		auto infoResult = lua_getinfo(state, "Sl", debug); \
+		Logger::method(ConcatVaargs(state), debug->source, debug->currentline); \
+		delete debug;
 
 	int LuaApi::Log::Warn(LuaState* state)
 	{
-		//TRACE_WRITE(Warn);
+		TRACE_WRITE(Warn);
 		return 0;
 	}
 	int LuaApi::Log::Debug(LuaState* state)
 	{
-		//TRACE_WRITE(Debug);
-
-		LuaDebug debug;
-
-		std::cout << lua_gettop(state) << std::endl;
-		auto stackResult = lua_getstack(state, 1, &debug);
-		assert(stackResult == 1);
-		LOG_T("Gotten stack");
-
-		/*
-		auto infoResult = lua_getinfo(state, "Sl", &debug);
-		assert(infoResult != 0);
-		std::cout << debug.source << std::endl;
-		*/
-	//	LOG_T("Gotten info");
-
-		//debug.currentline;
-		//std::string(debug.source);
-
+		TRACE_WRITE(Debug);
 		return 0;
 	}
 
@@ -54,11 +37,6 @@ namespace VermHook
 		Logger::RawWrite("                "s + ConcatVaargs(state));
 		Logger::NewLine();
 		return 0;
-	}
-
-	void LuaApi::Log::GetFunctionInfo(LuaState* state, int* outCount, string* outSrc)
-	{
-
 	}
 
 	string LuaApi::Log::ConcatVaargs(LuaState* state)
