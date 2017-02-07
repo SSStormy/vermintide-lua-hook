@@ -30,6 +30,8 @@ namespace VermHook
 	int(*lua_toboolean)(LuaState*, int /*index*/);
 	void(*lua_rawseti)(LuaState*, int /*index*/, int /*n*/);
 	void(*lua_gettable)(LuaState*, int /*index*/);
+	int(*lua_getinfo)(LuaState*, const char */*what*/, LuaDebug*/*ar*/);
+	int (*lua_getstack)(LuaState*, int /*level*/, LuaDebug */*ar*/);
 
 #define lua_pop_top lua_remove(state, lua_gettop(state))
 
@@ -73,7 +75,7 @@ namespace VermHook
 		auto luaModule = GetModuleHandle(LuaModule.c_str());
 
 #define mapcall(name) *(void**)(&name) = GetProcAddress(luaModule, #name);\
-					assert(name != nullptr);
+			if(name == nullptr) LOG_W("FAILED MAPCALL" #name);
 
 		mapcall(luaL_openlibs);
 		mapcall(lua_pushcclosure);
@@ -100,6 +102,8 @@ namespace VermHook
 		mapcall(lua_toboolean);
 		mapcall(lua_rawseti);
 		mapcall(lua_gettable);
+		mapcall(lua_getinfo);
+		mapcall(lua_getstack);
 #undef mapcall
 
 		routine->PostInit();

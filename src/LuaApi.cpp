@@ -3,6 +3,8 @@
 #include "include\LuaApi.h"
 #include <sstream>
 #include "include/Globals.h"
+#include <assert.h>
+#include "include/Globals.h"
 
 namespace VermHook
 {
@@ -11,14 +13,22 @@ namespace VermHook
 		Logger::Write(ConcatVaargs(state));
 		return 0;
 	}
+
+#define TRACE_WRITE(method) \
+		LuaDebug *debug = new LuaDebug(); \
+		auto stackResult = lua_getstack(state, 1, debug); \
+		auto infoResult = lua_getinfo(state, "Sl", debug); \
+		Logger::method(ConcatVaargs(state), debug->source, debug->currentline); \
+		delete debug;
+
 	int LuaApi::Log::Warn(LuaState* state)
 	{
-		Logger::Warn(ConcatVaargs(state));
+		TRACE_WRITE(Warn);
 		return 0;
 	}
 	int LuaApi::Log::Debug(LuaState* state)
 	{
-		Logger::Debug(ConcatVaargs(state));
+		TRACE_WRITE(Debug);
 		return 0;
 	}
 
