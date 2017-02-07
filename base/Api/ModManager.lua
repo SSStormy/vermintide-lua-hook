@@ -134,20 +134,10 @@ function ModManager:Enable(modHandle)
     if self._mods[key] == nil then return end
     if modHandle:IsEnabled() then return end
     
-    local disabledMods = modHandle:GetConfig()[DisabledMods]
-    local index = disabledMods:get_index(key)
-    
-    if index == nil then 
-        Log.Warn("Tried to enable mod while it is not in the disabled list.")
-        Log.Debug("Mod handle dump:")
-        Log.Dump(Api.json.encode(modHandle))
-        Log.Debug("Disabled mod dump:")
-        Log.Dump(Api.json.encode(disabledMods))
-        return
-    end
+    local disabledMods = self:GetConfig()[KEY_DISABLED]
     
     modHandle._enabled = true
-    table.remove(disabledMods, index)
+    disabledMods[key] = nil
     self:SaveConfig()
 end
     
@@ -163,13 +153,13 @@ function ModManager:Disable(modHandle)
     
     if self._mods[key] == nil then return end
     if not modHandle:IsEnabled() then return end
-    local disabledMods = modHandle:GetConfig()[DisabledMods]
+    local disabledMods = self:GetConfig()[KEY_DISABLED]
    
     -- check for duplicates
-    local index = disabledMods:get_index(key)
+    local index = table.get_index(disabledMods, key)
     if index ~= nil then return end
    
-    table.insert(disabledMods, key)
+    disabledMods[key] = true
     modHandle._enabled = false
     self:SaveConfig()
 end    

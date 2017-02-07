@@ -34,7 +34,9 @@ function ModHandle:initialize(owner, modFolder, disabledMods, name, version, aut
     self._website = website or nil
     
     self._hooks = { }
-    self._enabled = disabledMods[self:GetKey()] == nil
+    self._enabled = disabledMods[self:GetKey()] == nil 
+    
+    Log.Debug(self:GetKey() .. " enabled status: " .. tostring(self._enabled))
     
     getmetatable(self).__tojson = function(s, state)
         return "{ \"owner\":\"" .. tostring(s:GetOwner()) .. "\","..

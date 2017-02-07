@@ -38,6 +38,9 @@ function LuaModLoader:LoadModsInDir(directory, disabledMods)
     assert_e(Api.IsString(directory))
     assert_e(Api.IsTable(disabledMods))
     
+    Log.Debug("Loading mods using config dump:")
+    Log.Dump(Api.json.encode(disabledMods))
+    
     -- dont bother iterating over a folder that doesn't exist
     if not Path.ElementExists(directory, true) then return {} end
     

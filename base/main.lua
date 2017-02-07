@@ -26,8 +26,7 @@ Api.LoadBufferHook:AddHook("@scripts/game_state/state_ingame.lua", nil,
         Api.ChatConsole:HijackChat()
     ]], baseMod, false)
     
-Api.LoadBufferHook:AddHook("@scripts/ui/hud_ui/team_member_unit_frame_ui_definitions.lua", "Internal/PostPlay.lua", nil, baseMod, false)
-    
+Api.LoadBufferHook:AddHook("@scripts/ui/hud_ui/team_member_unit_frame_ui_definitions.lua", nil, "script_data.debug_enabled = true", baseMod, false)
     
 --[[ ---------------------------------------------------------------------------------------
                                         Chat commands 
@@ -73,6 +72,71 @@ local function printHelp(_, input)
     Api.ChatConsole:PrintChat(cmd:GetTrigger() .. " --- " .. cmd:GetDescription())
 end
 
+local function getModFromInput(input)
+    if not input or input == ' ' then Api.ChatConsole:PrintChat("No input.") return nil end
+    local mods = Api.ModManager:GetMods()
+    
+    -- find mod.
+    local mod
+    for k,imod in pairs(mods) do
+       if imod:GetName() == input then 
+           mod = imod 
+        end
+    end
+    return mod
+end
+
+local function disableMod(_, input)
+    local mod = getModFromInput(input)
+    
+    if not mod then Api.ChatConsole:PrintChat("Mod not found.") return end
+    if not mod:IsEnabled() then Api.ChatConsole:PrintChat("Mod is already disabled.") return end
+    
+    Api.ModManager:Disable(mod)
+    Api.ChatConsole:PrintChat("Disabled " .. mod:GetName())
+end
+
+local function enableMod(_, input)
+    local mod = getModFromInput(input)
+    
+    if not mod then Api.ChatConsole:PrintChat("Mod not found.") return end
+    if mod:IsEnabled() then Api.ChatConsole:PrintChat("Mod is already enabled.") return end
+    
+    Api.ModManager:Enable(mod)
+    Api.ChatConsole:PrintChat("Enabled " .. mod:GetName())
+end
+
+local function listMods(_, input)
+    local mods = Api.ModManager:GetMods()
+    Api.ChatConsole:PrintChat("Loaded mods:")
+    for k,mod in pairs(mods) do
+        local statusString
+        if mod:IsEnabled() then statusString = "enabled" else statusString = "disabled" end
+        Api.ChatConsole:PrintChat(mod:GetName() .. " --- " .. statusString)
+    end
+end
+
+local function getModInfo(_, input)
+    local mod = getModFromInput(input)
+    if not mod then Api.ChatConsole:PrintChat("Mod not found.") return end
+    
+    Api.ChatConsole:PrintChat(mod:GetName())
+    Api.ChatConsole:PrintChat("  Name: " .. mod:GetName())
+    Api.ChatConsole:PrintChat("  Author: " .. mod:GetAuthor())
+    Api.ChatConsole:PrintChat("  Version: " .. mod:GetVersion())
+    Api.ChatConsole:PrintChat("  Contact: " .. tostring(mod:GetContact()))
+    Api.ChatConsole:PrintChat("  Website: " .. tostring(mod:GetWebsite()))
+    Api.ChatConsole:PrintChat("  Enabled: " .. tostring(mod:IsEnabled()))
+    Api.ChatConsole:PrintChat("  ModFolder: " .. mod:GetModFolder())
+    Log.Debug("Hook dump:")
+    Log.Dump(Api.json.encode(mod:GetHooks()))
+end
+
 assert(Api.ChatConsole:RegisterCommand(Api.ConsoleCommandClass("help", "Prints all available commands or help about a particular one.", baseMod, printHelp)))
+assert(Api.ChatConsole:RegisterCommand(Api.ConsoleCommandClass("mod info", "Prints basic information about the mod.", baseMod, getModInfo)))
+assert(Api.ChatConsole:RegisterCommand(Api.ConsoleCommandClass("mod list", "Lists loaded mods.", baseMod, listMods)))
+assert(Api.ChatConsole:RegisterCommand(Api.ConsoleCommandClass("mod enable", "Enables a mod, identified by it's name.", baseMod, enableMod)))
+assert(Api.ChatConsole:RegisterCommand(Api.ConsoleCommandClass("mod disable", "Disables a mod, identified by it's name.", baseMod, disableMod)))
+
 
 Log.Write("Main.lua is done.") 
