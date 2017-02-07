@@ -75,7 +75,7 @@ namespace VermHook
 		auto luaModule = GetModuleHandle(LuaModule.c_str());
 
 #define mapcall(name) *(void**)(&name) = GetProcAddress(luaModule, #name);\
-			if(name == nullptr) { LOG_W("FAILED MAPCALL" #name);}
+			if(name == nullptr) LOG_W("FAILED MAPCALL" #name);
 
 		mapcall(luaL_openlibs);
 		mapcall(lua_pushcclosure);

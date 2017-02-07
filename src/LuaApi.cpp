@@ -33,13 +33,15 @@ namespace VermHook
 
 		std::cout << lua_gettop(state) << std::endl;
 		auto stackResult = lua_getstack(state, 1, &debug);
-		LOG_T("Gotten stack");
 		assert(stackResult == 1);
+		LOG_T("Gotten stack");
+
+		/*
 		auto infoResult = lua_getinfo(state, "Sl", &debug);
 		assert(infoResult != 0);
 		std::cout << debug.source << std::endl;
-
-		LOG_T("Gotten info");
+		*/
+	//	LOG_T("Gotten info");
 
 		//debug.currentline;
 		//std::string(debug.source);
